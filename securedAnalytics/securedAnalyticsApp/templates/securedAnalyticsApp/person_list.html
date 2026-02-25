@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Person List</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        a { color: #0066cc; text-decoration: none; margin-right: 10px; }
+        a:hover { text-decoration: underline; }
+        .btn { display: inline-block; padding: 8px 12px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 4px; }
+        .btn:hover { background-color: #45a049; }
+    </style>
+</head>
+<body>
+    <h1>Persons</h1>
+    <a href="{% url 'person_create' %}" class="btn">Add New Person</a>
+    
+    {% if persons %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Phone Number</th>
+                    <th>City</th>
+                    <th>State</th>
+                    <th>Ethnicity</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for person in persons %}
+                    <tr>
+                        <td>{{ person.user.username }}</td>
+                        <td>{{ person.phone_number }}</td>
+                        <td>{{ person.city }}</td>
+                        <td>{{ person.state }}</td>
+                        <td>{{ person.ethnicity }}</td>
+                        <td>
+                            <a href="{% url 'person_detail' person.pk %}">View</a>
+                            <a href="{% url 'person_update' person.pk %}">Edit</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No persons found.</p>
+    {% endif %}
+</body>
+</html>
