@@ -1,5 +1,6 @@
 from django.test import TestCase, Client
 from django.urls import reverse
+from django.contrib.auth.hashers import make_password
 from .models import Users, Person
 
 
@@ -9,7 +10,7 @@ class WelcomePageViewTest(TestCase):
         self.user = Users.objects.create(
             username="testuser",
             email="test@example.com",
-            password="testpass123",
+            password=make_password("testpass123"),
         )
 
     def test_welcome_page_requires_login(self):
@@ -39,7 +40,7 @@ class DisclaimerPageViewTest(TestCase):
         self.user = Users.objects.create(
             username="testuser",
             email="test@example.com",
-            password="testpass123",
+            password=make_password("testpass123"),
         )
 
     def test_disclaimer_page_requires_login(self):
@@ -69,7 +70,7 @@ class DemographicsViewTest(TestCase):
         self.user = Users.objects.create(
             username="testuser",
             email="test@example.com",
-            password="testpass123",
+            password=make_password("testpass123"),
         )
 
     def test_demographics_page_requires_login(self):
@@ -140,7 +141,7 @@ class LoginPageViewTest(TestCase):
         self.user = Users.objects.create(
             username="testuser",
             email="test@example.com",
-            password="testpass123",
+            password=make_password("testpass123"),
         )
 
     def test_login_page_renders(self):

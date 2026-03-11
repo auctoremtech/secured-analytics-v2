@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, TemplateView, View
 from django.urls import reverse_lazy
+from django.contrib.auth.hashers import check_password
 from .models import Person, Users
 
 
@@ -21,10 +22,13 @@ class LoginPageView(TemplateView):
         password = request.POST.get("password")
 
         try:
-            user = Users.objects.get(username=username, password=password, is_active=True)
-            # Store user_id in session to simulate login
-            request.session["user_id"] = user.id
-            return redirect("welcome")
+            user = Users.objects.get(username=username, is_active=True)
+            if check_password(password, user.password):
+                # Store user_id in session to simulate login
+                request.session["user_id"] = user.id
+                return redirect("welcome")
+            else:
+                return render(request, self.template_name, {"error": "Invalid credentials"})
         except Users.DoesNotExist:
             # For now, redirect back to login with error
             return render(request, self.template_name, {"error": "Invalid credentials"})
