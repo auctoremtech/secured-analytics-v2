@@ -4,8 +4,26 @@ from .models import Users, Person
 
 
 class WelcomePageViewTest(TestCase):
-    def test_welcome_page_renders(self):
-        """Test that the welcome page renders correctly."""
+    def setUp(self):
+        """Set up test user and login."""
+        self.user = Users.objects.create(
+            username="testuser",
+            email="test@example.com",
+            password="testpass123",
+        )
+
+    def test_welcome_page_requires_login(self):
+        """Test that the welcome page redirects to login if not authenticated."""
+        response = self.client.get(reverse("welcome"))
+        self.assertRedirects(response, reverse("login"))
+
+    def test_welcome_page_renders_when_logged_in(self):
+        """Test that the welcome page renders correctly when logged in."""
+        # Set up session with user_id
+        session = self.client.session
+        session["user_id"] = self.user.id
+        session.save()
+
         response = self.client.get(reverse("welcome"))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "securedAnalyticsApp/welcome.html")
@@ -16,8 +34,26 @@ class WelcomePageViewTest(TestCase):
 
 
 class DisclaimerPageViewTest(TestCase):
-    def test_disclaimer_page_renders(self):
-        """Test that the disclaimer page renders correctly."""
+    def setUp(self):
+        """Set up test user."""
+        self.user = Users.objects.create(
+            username="testuser",
+            email="test@example.com",
+            password="testpass123",
+        )
+
+    def test_disclaimer_page_requires_login(self):
+        """Test that the disclaimer page redirects to login if not authenticated."""
+        response = self.client.get(reverse("disclaimer"))
+        self.assertRedirects(response, reverse("login"))
+
+    def test_disclaimer_page_renders_when_logged_in(self):
+        """Test that the disclaimer page renders correctly when logged in."""
+        # Set up session with user_id
+        session = self.client.session
+        session["user_id"] = self.user.id
+        session.save()
+
         response = self.client.get(reverse("disclaimer"))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "securedAnalyticsApp/disclaimer.html")
@@ -36,8 +72,18 @@ class DemographicsViewTest(TestCase):
             password="testpass123",
         )
 
-    def test_demographics_page_renders(self):
-        """Test that the demographics page renders correctly."""
+    def test_demographics_page_requires_login(self):
+        """Test that the demographics page redirects to login if not authenticated."""
+        response = self.client.get(reverse("demographics"))
+        self.assertRedirects(response, reverse("login"))
+
+    def test_demographics_page_renders_when_logged_in(self):
+        """Test that the demographics page renders correctly when logged in."""
+        # Set up session with user_id
+        session = self.client.session
+        session["user_id"] = self.user.id
+        session.save()
+
         response = self.client.get(reverse("demographics"))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "securedAnalyticsApp/demographics.html")

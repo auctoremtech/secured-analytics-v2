@@ -4,6 +4,15 @@ from django.urls import reverse_lazy
 from .models import Person, Users
 
 
+class LoginRequiredMixin:
+    """Mixin that checks if user is logged in via session."""
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.session.get("user_id"):
+            return redirect("login")
+        return super().dispatch(request, *args, **kwargs)
+
+
 class LoginPageView(TemplateView):
     template_name = "securedAnalyticsApp/login.html"
 
@@ -21,19 +30,19 @@ class LoginPageView(TemplateView):
             return render(request, self.template_name, {"error": "Invalid credentials"})
 
 
-class WelcomePageView(TemplateView):
+class WelcomePageView(LoginRequiredMixin, TemplateView):
     """Welcome/Splash screen shown after login with Yes/No buttons."""
 
     template_name = "securedAnalyticsApp/welcome.html"
 
 
-class DisclaimerPageView(TemplateView):
+class DisclaimerPageView(LoginRequiredMixin, TemplateView):
     """Disclaimer page with Accept/Do Not Accept buttons."""
 
     template_name = "securedAnalyticsApp/disclaimer.html"
 
 
-class DemographicsView(CreateView):
+class DemographicsView(LoginRequiredMixin, CreateView):
     """Demographics page for entering Person model information."""
 
     model = Person
