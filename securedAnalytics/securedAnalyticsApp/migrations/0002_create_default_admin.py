@@ -1,4 +1,5 @@
 from django.db import migrations
+from django.contrib.auth.hashers import make_password
 
 
 def create_default_admin(apps, schema_editor):
@@ -9,7 +10,7 @@ def create_default_admin(apps, schema_editor):
         Users.objects.create(
             username="SA_Admin",
             email="sa_admin@example.com",
-            password="SA_Admin01",
+            password=make_password("SA_Admin01"),
             first_name="Admin",
             last_name="User",
             is_active=True,
