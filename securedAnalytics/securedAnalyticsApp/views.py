@@ -1,7 +1,11 @@
 from django.shortcuts import render
-from django.views.generic import ListView, DetailView, CreateView, UpdateView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, TemplateView
 from django.urls import reverse_lazy
 from .models import Person
+
+
+class LoginPageView(TemplateView):
+    template_name = "securedAnalyticsApp/login.html"
 
 
 class PersonListView(ListView):
