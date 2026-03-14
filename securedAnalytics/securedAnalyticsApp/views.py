@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, TemplateView, View
 from django.urls import reverse_lazy
 from django.contrib.auth.hashers import check_password
+from .forms import DemographicsForm
 from .models import Person, Users
 
 
@@ -50,20 +51,23 @@ class DemographicsView(LoginRequiredMixin, CreateView):
     """Demographics page for entering Person model information."""
 
     model = Person
+    form_class = DemographicsForm
     template_name = "securedAnalyticsApp/demographics.html"
-    fields = ["phone_number", "address", "city", "state", "zip_code", "date_of_birth", "ethnicity"]
     success_url = reverse_lazy("person_list")
 
-    def form_valid(self, form):
-        # Get the current user from session
+    def dispatch(self, request, *args, **kwargs):
         user_id = self.request.session.get("user_id")
-        if user_id:
-            try:
-                user = Users.objects.get(id=user_id)
-                form.instance.user = user
-            except Users.DoesNotExist:
-                return redirect("login")
-        return super().form_valid(form)
+        try:
+            self.current_user = Users.objects.get(id=user_id)
+        except Users.DoesNotExist:
+            return redirect("login")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.current_user
+        kwargs["instance"] = Person.objects.filter(user=self.current_user).first()
+        return kwargs
 
 
 class LogoutView(View):

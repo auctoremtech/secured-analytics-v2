@@ -4,8 +4,8 @@ from .models import Users, Person, Address
 
 @admin.register(Users)
 class UsersAdmin(admin.ModelAdmin):
-    list_display = ("username", "email", "first_name", "last_name", "is_active", "created_at")
-    search_fields = ("username", "email")
+    list_display = ("username", "email", "first_name", "middle_name", "last_name", "name_suffix", "is_active", "created_at")
+    search_fields = ("username", "email", "first_name", "middle_name", "last_name", "name_suffix")
     list_filter = ("is_active", "created_at")
     ordering = ("-created_at",)
 

@@ -342,6 +342,56 @@
                         
                         <div class="form-row">
                             <div class="form-group">
+                                <label for="id_first_name">First Name</label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                    <ul class="errorlist">
+                                    {% for error in form.first_name.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                            <div class="form-group">
+                                <label for="id_middle_name">Middle Name</label>
+                                {{ form.middle_name }}
+                                {% if form.middle_name.errors %}
+                                    <ul class="errorlist">
+                                    {% for error in form.middle_name.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="id_last_name">Last Name</label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                    <ul class="errorlist">
+                                    {% for error in form.last_name.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                            <div class="form-group">
+                                <label for="id_name_suffix">Suffix</label>
+                                {{ form.name_suffix }}
+                                {% if form.name_suffix.errors %}
+                                    <ul class="errorlist">
+                                    {% for error in form.name_suffix.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
                                 <label for="id_phone_number">Phone Number</label>
                                 {{ form.phone_number }}
                                 {% if form.phone_number.errors %}
