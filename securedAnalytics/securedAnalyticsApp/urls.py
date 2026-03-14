@@ -9,6 +9,7 @@ from .views import (
     WelcomePageView,
     DisclaimerPageView,
     DemographicsView,
+    DemographicsSavedView,
     LogoutView,
 )
 
@@ -18,6 +19,7 @@ urlpatterns = [
     path("welcome/", WelcomePageView.as_view(), name="welcome"),
     path("disclaimer/", DisclaimerPageView.as_view(), name="disclaimer"),
     path("demographics/", DemographicsView.as_view(), name="demographics"),
+    path("demographics/saved/", DemographicsSavedView.as_view(), name="demographics_saved"),
     path("logout/", LogoutView.as_view(), name="logout"),
     path("persons/", PersonListView.as_view(), name="person_list"),
     path("persons/<int:pk>/", PersonDetailView.as_view(), name="person_detail"),

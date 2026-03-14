@@ -100,6 +100,9 @@ class DemographicsViewTest(TestCase):
         self.assertContains(response, "State")
         self.assertContains(response, "Zip Code")
         self.assertContains(response, "Ethnicity")
+        self.assertContains(response, "Gender")
+        self.assertContains(response, "Rank")
+        self.assertContains(response, "Years of Service")
 
     def test_demographics_form_submit(self):
         """Test that demographics form can be submitted."""
@@ -115,18 +118,26 @@ class DemographicsViewTest(TestCase):
                 "middle_name": "Anne",
                 "last_name": "Jordan",
                 "name_suffix": "Jr.",
-                "phone_number": "555-1234",
+                "phone_number": "555-123-4567",
                 "address": "123 Test St",
                 "city": "Test City",
                 "state": "TX",
                 "zip_code": "12345",
                 "date_of_birth": "1990-01-01",
                 "ethnicity": "Other",
+                "gender": "Male",
+                "rank": "Detective",
+                "years_of_service": "3-5",
             },
         )
-        self.assertEqual(response.status_code, 302)  # Redirect on success
+        self.assertRedirects(response, reverse("demographics_saved"))
         person = Person.objects.get(user=self.user)
-        self.assertEqual(person.phone_number, "555-1234")
+        self.assertEqual(person.phone_number, "555-123-4567")
+        self.assertEqual(person.gender, "Male")
+        self.assertEqual(person.rank, "Detective")
+        self.assertEqual(person.years_of_service, "3-5")
+        self.assertEqual(len(person.anonymous_id), 10)
+        self.assertTrue(person.anonymous_id.isalnum())
         self.user.refresh_from_db()
         self.assertEqual(self.user.first_name, "Taylor")
         self.assertEqual(self.user.middle_name, "Anne")
@@ -156,33 +167,66 @@ class DemographicsViewTest(TestCase):
                 "middle_name": "Lee",
                 "last_name": "Morgan",
                 "name_suffix": "III",
-                "phone_number": "555-9999",
+                "phone_number": "555-999-9999",
                 "address": "456 Updated Ave",
                 "city": "New City",
                 "state": "NY",
                 "zip_code": "10001",
                 "date_of_birth": "1985-05-05",
                 "ethnicity": "Asian",
+                "gender": "Female",
+                "rank": "Captain",
+                "years_of_service": "5-7",
             },
         )
 
-        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse("demographics_saved"))
         self.assertEqual(Person.objects.filter(user=self.user).count(), 1)
 
         person.refresh_from_db()
-        self.assertEqual(person.phone_number, "555-9999")
+        self.assertEqual(person.phone_number, "555-999-9999")
         self.assertEqual(person.address, "456 Updated Ave")
         self.assertEqual(person.city, "New City")
         self.assertEqual(person.state, "NY")
         self.assertEqual(person.zip_code, "10001")
         self.assertEqual(str(person.date_of_birth), "1985-05-05")
         self.assertEqual(person.ethnicity, "Asian")
+        self.assertEqual(person.gender, "Female")
+        self.assertEqual(person.rank, "Captain")
+        self.assertEqual(person.years_of_service, "5-7")
 
         self.user.refresh_from_db()
         self.assertEqual(self.user.first_name, "Casey")
         self.assertEqual(self.user.middle_name, "Lee")
         self.assertEqual(self.user.last_name, "Morgan")
         self.assertEqual(self.user.name_suffix, "III")
+
+    def test_years_of_service_saves_correctly(self):
+        """Test that each years_of_service range is accepted and saved."""
+        session = self.client.session
+        session["user_id"] = self.user.id
+        session.save()
+
+        for yos in ["0-2", "2-3", "3-5", "5-7"]:
+            self.client.post(
+                reverse("demographics"),
+                {
+                    "first_name": "Sam",
+                    "middle_name": "",
+                    "last_name": "Test",
+                    "name_suffix": "",
+                    "phone_number": "",
+                    "address": "",
+                    "city": "",
+                    "state": "",
+                    "zip_code": "",
+                    "date_of_birth": "",
+                    "ethnicity": "Other",
+                    "years_of_service": yos,
+                },
+            )
+            person = Person.objects.get(user=self.user)
+            self.assertEqual(person.years_of_service, yos)
 
     def test_zip_code_accepts_zip_plus_four(self):
         """Test that ZIP+4 format (12345-6789) is accepted."""
@@ -197,7 +241,7 @@ class DemographicsViewTest(TestCase):
                 "middle_name": "",
                 "last_name": "Smith",
                 "name_suffix": "",
-                "phone_number": "555-0001",
+                "phone_number": "555-000-0001",
                 "address": "1 Main St",
                 "city": "Austin",
                 "state": "TX",
@@ -206,7 +250,7 @@ class DemographicsViewTest(TestCase):
                 "ethnicity": "Other",
             },
         )
-        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse("demographics_saved"))
         person = Person.objects.get(user=self.user)
         self.assertEqual(person.zip_code, "78701-1234")
 
@@ -224,7 +268,7 @@ class DemographicsViewTest(TestCase):
                     "middle_name": "",
                     "last_name": "Smith",
                     "name_suffix": "",
-                    "phone_number": "555-0001",
+                    "phone_number": "555-000-0001",
                     "address": "1 Main St",
                     "city": "Austin",
                     "state": "TX",
@@ -253,7 +297,7 @@ class DemographicsViewTest(TestCase):
                 "middle_name": "",
                 "last_name": "Smith",
                 "name_suffix": "",
-                "phone_number": "555-0001",
+                "phone_number": "555-000-0001",
                 "address": "1 Main St",
                 "city": "Austin",
                 "state": "XX",
@@ -264,6 +308,164 @@ class DemographicsViewTest(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Select a valid choice")
+
+    def test_name_fields_reject_invalid_characters(self):
+        """Test that name fields reject digits and special characters."""
+        session = self.client.session
+        session["user_id"] = self.user.id
+        session.save()
+
+        for bad_name in ["Taylor123", "Anne@Work", "Jordan<script>"]:
+            response = self.client.post(
+                reverse("demographics"),
+                {
+                    "first_name": bad_name,
+                    "middle_name": "",
+                    "last_name": "Smith",
+                    "name_suffix": "",
+                    "phone_number": "",
+                    "address": "",
+                    "city": "",
+                    "state": "",
+                    "zip_code": "",
+                    "date_of_birth": "",
+                    "ethnicity": "Other",
+                    "years_of_service": "",
+                },
+            )
+            self.assertEqual(
+                response.status_code, 200,
+                msg=f"Expected validation error for first_name='{bad_name}'",
+            )
+
+    def test_name_fields_accept_hyphens_and_apostrophes(self):
+        """Test that hyphenated names and names with apostrophes are accepted."""
+        session = self.client.session
+        session["user_id"] = self.user.id
+        session.save()
+
+        response = self.client.post(
+            reverse("demographics"),
+            {
+                "first_name": "Mary-Jane",
+                "middle_name": "O'Brien",
+                "last_name": "Smith-Jones",
+                "name_suffix": "",
+                "phone_number": "",
+                "address": "",
+                "city": "",
+                "state": "",
+                "zip_code": "",
+                "date_of_birth": "",
+                "ethnicity": "Other",
+                "years_of_service": "",
+            },
+        )
+        self.assertRedirects(response, reverse("demographics_saved"))
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.first_name, "Mary-Jane")
+        self.assertEqual(self.user.middle_name, "O'Brien")
+        self.assertEqual(self.user.last_name, "Smith-Jones")
+
+    def test_demographics_saved_page_requires_login(self):
+        """Test that the demographics saved page redirects to login if not authenticated."""
+        response = self.client.get(reverse("demographics_saved"))
+        self.assertRedirects(response, reverse("login"))
+
+    def test_demographics_saved_page_displays_anonymous_id_and_copy(self):
+        """Test that demographics saved page shows anonymous ID and the Proceed button."""
+        person = Person.objects.create(user=self.user)
+
+        session = self.client.session
+        session["user_id"] = self.user.id
+        session.save()
+
+        response = self.client.get(reverse("demographics_saved"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "securedAnalyticsApp/demographics_saved.html")
+        self.assertContains(response, "Your unique anonymous ID is:")
+        self.assertContains(response, str(person.anonymous_id))
+        self.assertContains(response, "Lorem ipsum")
+        self.assertContains(response, "Proceed")
+
+    def test_phone_rejects_invalid_format(self):
+        """Test that non-US phone number formats are rejected."""
+        session = self.client.session
+        session["user_id"] = self.user.id
+        session.save()
+
+        for bad_phone in ["555-1234", "12345", "abcdefghij", "555-abc-1234"]:
+            response = self.client.post(
+                reverse("demographics"),
+                {
+                    "first_name": "",
+                    "middle_name": "",
+                    "last_name": "",
+                    "name_suffix": "",
+                    "phone_number": bad_phone,
+                    "address": "",
+                    "city": "",
+                    "state": "",
+                    "zip_code": "",
+                    "date_of_birth": "",
+                    "ethnicity": "Other",
+                    "years_of_service": "",
+                },
+            )
+            self.assertEqual(
+                response.status_code, 200,
+                msg=f"Expected validation error for phone='{bad_phone}'",
+            )
+
+    def test_address_rejects_invalid_characters(self):
+        """Test that address rejects characters outside the allowed set."""
+        session = self.client.session
+        session["user_id"] = self.user.id
+        session.save()
+
+        response = self.client.post(
+            reverse("demographics"),
+            {
+                "first_name": "",
+                "middle_name": "",
+                "last_name": "",
+                "name_suffix": "",
+                "phone_number": "",
+                "address": "123 Main St <script>alert(1)</script>",
+                "city": "",
+                "state": "",
+                "zip_code": "",
+                "date_of_birth": "",
+                "ethnicity": "Other",
+                "years_of_service": "",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_city_rejects_invalid_characters(self):
+        """Test that city rejects characters outside the allowed set."""
+        session = self.client.session
+        session["user_id"] = self.user.id
+        session.save()
+
+        response = self.client.post(
+            reverse("demographics"),
+            {
+                "first_name": "",
+                "middle_name": "",
+                "last_name": "",
+                "name_suffix": "",
+                "phone_number": "",
+                "address": "",
+                "city": "New <City>",
+                "state": "",
+                "zip_code": "",
+                "date_of_birth": "",
+                "ethnicity": "Other",
+                "years_of_service": "",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
 
 
 class LogoutViewTest(TestCase):

@@ -5,6 +5,10 @@ from django import forms
 from .models import Person
 
 US_ZIP_RE = re.compile(r'^\d{5}(-\d{4})?$')
+NAME_RE = re.compile(r"^[A-Za-z\s\-'\.]+$")
+PHONE_RE = re.compile(r"^\+?1?[\s.\-]?\(?\d{3}\)?[\s.\-]?\d{3}[\s.\-]?\d{4}$")
+ADDRESS_RE = re.compile(r"^[A-Za-z0-9\s,\.#\-'/]+$")
+CITY_RE = re.compile(r"^[A-Za-z0-9\s\-'\.]+$")
 
 US_STATES_CHOICES = [
     ("", "— Select State —"),
@@ -106,6 +110,9 @@ class DemographicsForm(forms.ModelForm):
             "zip_code",
             "date_of_birth",
             "ethnicity",
+            "gender",
+            "rank",
+            "years_of_service",
         ]
 
     def __init__(self, *args, user=None, **kwargs):
@@ -131,6 +138,78 @@ class DemographicsForm(forms.ModelForm):
         self.fields["date_of_birth"].widget = forms.DateInput(
             attrs={"type": "date"}, format="%Y-%m-%d"
         )
+
+        _name_attrs = {
+            "pattern": r"[A-Za-z\s\-'\.]+",
+            "title": "Letters, spaces, hyphens, apostrophes, and periods only",
+        }
+        for _f in ("first_name", "middle_name", "last_name"):
+            self.fields[_f].widget.attrs.update(_name_attrs)
+
+        self.fields["phone_number"].widget.attrs.update({
+            "pattern": r"\+?1?[\s.\-]?\(?\d{3}\)?[\s.\-]?\d{3}[\s.\-]?\d{4}",
+            "title": "Enter a valid US phone number (e.g. 555-123-4567)",
+            "placeholder": "555-123-4567",
+        })
+
+        self.fields["address"].widget.attrs.update({
+            "title": "Letters, numbers, spaces, and common punctuation (. , # - ' /) only",
+            "placeholder": "123 Main St",
+        })
+
+        self.fields["city"].widget.attrs.update({
+            "pattern": r"[A-Za-z0-9\s\-'\.]+",
+            "title": "Letters, numbers, spaces, hyphens, apostrophes, and periods only",
+            "placeholder": "City name",
+        })
+
+    def clean_first_name(self):
+        value = self.cleaned_data.get("first_name", "")
+        if value and not NAME_RE.match(value):
+            raise forms.ValidationError(
+                "First name may only contain letters, spaces, hyphens, apostrophes, and periods."
+            )
+        return value
+
+    def clean_middle_name(self):
+        value = self.cleaned_data.get("middle_name", "")
+        if value and not NAME_RE.match(value):
+            raise forms.ValidationError(
+                "Middle name may only contain letters, spaces, hyphens, apostrophes, and periods."
+            )
+        return value
+
+    def clean_last_name(self):
+        value = self.cleaned_data.get("last_name", "")
+        if value and not NAME_RE.match(value):
+            raise forms.ValidationError(
+                "Last name may only contain letters, spaces, hyphens, apostrophes, and periods."
+            )
+        return value
+
+    def clean_phone_number(self):
+        value = self.cleaned_data.get("phone_number", "")
+        if value and not PHONE_RE.match(value):
+            raise forms.ValidationError(
+                "Enter a valid US phone number (e.g. 555-123-4567 or (555) 123-4567)."
+            )
+        return value
+
+    def clean_address(self):
+        value = self.cleaned_data.get("address", "")
+        if value and not ADDRESS_RE.match(value):
+            raise forms.ValidationError(
+                "Address may only contain letters, numbers, spaces, and common punctuation (. , # - ' /)."
+            )
+        return value
+
+    def clean_city(self):
+        value = self.cleaned_data.get("city", "")
+        if value and not CITY_RE.match(value):
+            raise forms.ValidationError(
+                "City name may only contain letters, numbers, spaces, hyphens, apostrophes, and periods."
+            )
+        return value
 
     def clean_zip_code(self):
         zip_code = self.cleaned_data.get("zip_code", "")

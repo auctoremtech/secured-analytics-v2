@@ -53,7 +53,7 @@ class DemographicsView(LoginRequiredMixin, CreateView):
     model = Person
     form_class = DemographicsForm
     template_name = "securedAnalyticsApp/demographics.html"
-    success_url = reverse_lazy("person_list")
+    success_url = reverse_lazy("demographics_saved")
 
     def dispatch(self, request, *args, **kwargs):
         user_id = self.request.session.get("user_id")
@@ -68,6 +68,25 @@ class DemographicsView(LoginRequiredMixin, CreateView):
         kwargs["user"] = self.current_user
         kwargs["instance"] = Person.objects.filter(user=self.current_user).first()
         return kwargs
+
+
+class DemographicsSavedView(LoginRequiredMixin, TemplateView):
+    """Confirmation page shown after demographics are saved."""
+
+    template_name = "securedAnalyticsApp/demographics_saved.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        user_id = self.request.session.get("user_id")
+        try:
+            self.current_user = Users.objects.get(id=user_id)
+        except Users.DoesNotExist:
+            return redirect("login")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["person"] = Person.objects.filter(user=self.current_user).first()
+        return context
 
 
 class LogoutView(View):
