@@ -271,7 +271,14 @@
                 <li><a href="#" class="nav-item disabled"><span class="nav-icon">📋</span> Assessment</a></li>
                 <li><a href="#" class="nav-item disabled"><span class="nav-icon">📈</span> Analytics</a></li>
                 <li><a href="#" class="nav-item disabled"><span class="nav-icon">▶️</span> Onboarding</a></li>
-                <li><a href="{% url 'logout' %}" class="nav-item"><span class="nav-icon">🚪</span> Logout</a></li>
+                <li>
+                    <form method="post" action="{% url 'logout' %}" style="margin: 0;">
+                        {% csrf_token %}
+                        <button type="submit" class="nav-item" style="width: 100%; border: none; background: transparent; text-align: left;">
+                            <span class="nav-icon">🚪</span> Logout
+                        </button>
+                    </form>
+                </li>
             </ul>
         </nav>
     </aside>
@@ -331,7 +338,10 @@
 
                 <div class="button-group">
                     <a href="{% url 'demographics' %}" class="btn btn-accept">Accept</a>
-                    <a href="{% url 'logout' %}" class="btn btn-decline">Do Not Accept</a>
+                    <form method="post" action="{% url 'logout' %}" style="display: inline; margin: 0;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-decline">Do Not Accept</button>
+                    </form>
                 </div>
             </div>
         </div>

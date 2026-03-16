@@ -469,18 +469,28 @@ class DemographicsViewTest(TestCase):
 
 
 class LogoutViewTest(TestCase):
-    def test_logout_clears_session_and_redirects(self):
-        """Test that logout clears session and redirects to login."""
+    def test_logout_post_clears_session_and_redirects(self):
+        """Test that logout POST clears session and redirects to login."""
         # Set up a session
+        session = self.client.session
+        session["user_id"] = 1
+        session.save()
+
+        response = self.client.post(reverse("logout"))
+        self.assertRedirects(response, reverse("login"))
+
+        # Session should be cleared
+        self.assertNotIn("user_id", self.client.session)
+
+    def test_logout_get_does_not_clear_session(self):
+        """Test that logout GET does not clear session and only redirects."""
         session = self.client.session
         session["user_id"] = 1
         session.save()
 
         response = self.client.get(reverse("logout"))
         self.assertRedirects(response, reverse("login"))
-
-        # Session should be cleared
-        self.assertNotIn("user_id", self.client.session)
+        self.assertIn("user_id", self.client.session)
 
 
 class LoginPageViewTest(TestCase):
@@ -514,4 +524,19 @@ class LoginPageViewTest(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Invalid credentials")
+
+    def test_login_lockout_after_repeated_failures(self):
+        """Test login lockout is enforced after repeated failed attempts."""
+        for _ in range(5):
+            self.client.post(
+                reverse("login"),
+                {"username": "testuser", "password": "wrongpass"},
+            )
+
+        response = self.client.post(
+            reverse("login"),
+            {"username": "testuser", "password": "testpass123"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Too many failed login attempts")
 

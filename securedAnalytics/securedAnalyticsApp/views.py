@@ -1,7 +1,10 @@
+from datetime import timedelta
+
 from django.shortcuts import render, redirect
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, TemplateView, View
 from django.urls import reverse_lazy
 from django.contrib.auth.hashers import check_password
+from django.utils import timezone
 from .forms import DemographicsForm
 from .models import Person, Users
 
@@ -17,21 +20,58 @@ class LoginRequiredMixin:
 
 class LoginPageView(TemplateView):
     template_name = "securedAnalyticsApp/login.html"
+    MAX_FAILED_ATTEMPTS = 5
+    LOCKOUT_MINUTES = 15
+    FAILED_ATTEMPTS_KEY = "failed_login_attempts"
+    LOCKED_UNTIL_KEY = "login_locked_until"
+
+    def _is_locked(self, request):
+        locked_until = request.session.get(self.LOCKED_UNTIL_KEY)
+        if not locked_until:
+            return False
+        try:
+            locked_until_dt = timezone.datetime.fromisoformat(locked_until)
+        except ValueError:
+            request.session.pop(self.LOCKED_UNTIL_KEY, None)
+            return False
+        if timezone.is_naive(locked_until_dt):
+            locked_until_dt = timezone.make_aware(locked_until_dt, timezone.get_current_timezone())
+        if timezone.now() >= locked_until_dt:
+            request.session.pop(self.LOCKED_UNTIL_KEY, None)
+            request.session.pop(self.FAILED_ATTEMPTS_KEY, None)
+            return False
+        return True
+
+    def _register_failed_attempt(self, request):
+        attempts = request.session.get(self.FAILED_ATTEMPTS_KEY, 0) + 1
+        request.session[self.FAILED_ATTEMPTS_KEY] = attempts
+        if attempts >= self.MAX_FAILED_ATTEMPTS:
+            lockout_until = timezone.now() + timedelta(minutes=self.LOCKOUT_MINUTES)
+            request.session[self.LOCKED_UNTIL_KEY] = lockout_until.isoformat()
 
     def post(self, request, *args, **kwargs):
+        if self._is_locked(request):
+            return render(
+                request,
+                self.template_name,
+                {"error": "Too many failed login attempts. Please try again later."},
+            )
+
         username = request.POST.get("username")
         password = request.POST.get("password")
 
         try:
             user = Users.objects.get(username=username, is_active=True)
             if check_password(password, user.password):
-                # Store user_id in session to simulate login
+                # Rotate session to reduce fixation risk and clear stale auth throttle keys.
+                request.session.flush()
                 request.session["user_id"] = user.id
                 return redirect("welcome")
             else:
+                self._register_failed_attempt(request)
                 return render(request, self.template_name, {"error": "Invalid credentials"})
         except Users.DoesNotExist:
-            # For now, redirect back to login with error
+            self._register_failed_attempt(request)
             return render(request, self.template_name, {"error": "Invalid credentials"})
 
 
@@ -92,9 +132,13 @@ class DemographicsSavedView(LoginRequiredMixin, TemplateView):
 class LogoutView(View):
     """Logs the user out by clearing the session."""
 
-    def get(self, request, *args, **kwargs):
-        # Clear the session
+    def post(self, request, *args, **kwargs):
+        # Clear the session on an intentional, CSRF-protected POST.
         request.session.flush()
+        return redirect("login")
+
+    def get(self, request, *args, **kwargs):
+        # Do not log out on GET requests.
         return redirect("login")
 
 
