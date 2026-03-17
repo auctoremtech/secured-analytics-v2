@@ -1,21 +1,13 @@
 from datetime import timedelta
 
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render, redirect
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, TemplateView, View
 from django.urls import reverse_lazy
-from django.contrib.auth.hashers import check_password
 from django.utils import timezone
 from .forms import DemographicsForm
 from .models import Person, Users
-
-
-class LoginRequiredMixin:
-    """Mixin that checks if user is logged in via session."""
-
-    def dispatch(self, request, *args, **kwargs):
-        if not request.session.get("user_id"):
-            return redirect("login")
-        return super().dispatch(request, *args, **kwargs)
 
 
 class LoginPageView(TemplateView):
@@ -60,17 +52,11 @@ class LoginPageView(TemplateView):
         username = request.POST.get("username")
         password = request.POST.get("password")
 
-        try:
-            user = Users.objects.get(username=username, is_active=True)
-            if check_password(password, user.password):
-                # Rotate session to reduce fixation risk and clear stale auth throttle keys.
-                request.session.flush()
-                request.session["user_id"] = user.id
-                return redirect("welcome")
-            else:
-                self._register_failed_attempt(request)
-                return render(request, self.template_name, {"error": "Invalid credentials"})
-        except Users.DoesNotExist:
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return redirect("welcome")
+        else:
             self._register_failed_attempt(request)
             return render(request, self.template_name, {"error": "Invalid credentials"})
 
@@ -78,54 +64,42 @@ class LoginPageView(TemplateView):
 class WelcomePageView(LoginRequiredMixin, TemplateView):
     """Welcome/Splash screen shown after login with Yes/No buttons."""
 
+    login_url = "login"
     template_name = "securedAnalyticsApp/welcome.html"
 
 
 class DisclaimerPageView(LoginRequiredMixin, TemplateView):
     """Disclaimer page with Accept/Do Not Accept buttons."""
 
+    login_url = "login"
     template_name = "securedAnalyticsApp/disclaimer.html"
 
 
 class DemographicsView(LoginRequiredMixin, CreateView):
     """Demographics page for entering Person model information."""
 
+    login_url = "login"
     model = Person
     form_class = DemographicsForm
     template_name = "securedAnalyticsApp/demographics.html"
     success_url = reverse_lazy("demographics_saved")
 
-    def dispatch(self, request, *args, **kwargs):
-        user_id = self.request.session.get("user_id")
-        try:
-            self.current_user = Users.objects.get(id=user_id)
-        except Users.DoesNotExist:
-            return redirect("login")
-        return super().dispatch(request, *args, **kwargs)
-
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs["user"] = self.current_user
-        kwargs["instance"] = Person.objects.filter(user=self.current_user).first()
+        kwargs["user"] = self.request.user
+        kwargs["instance"] = Person.objects.filter(user=self.request.user).first()
         return kwargs
 
 
 class DemographicsSavedView(LoginRequiredMixin, TemplateView):
     """Confirmation page shown after demographics are saved."""
 
+    login_url = "login"
     template_name = "securedAnalyticsApp/demographics_saved.html"
-
-    def dispatch(self, request, *args, **kwargs):
-        user_id = self.request.session.get("user_id")
-        try:
-            self.current_user = Users.objects.get(id=user_id)
-        except Users.DoesNotExist:
-            return redirect("login")
-        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["person"] = Person.objects.filter(user=self.current_user).first()
+        context["person"] = Person.objects.filter(user=self.request.user).first()
         return context
 
 
@@ -133,12 +107,10 @@ class LogoutView(View):
     """Logs the user out by clearing the session."""
 
     def post(self, request, *args, **kwargs):
-        # Clear the session on an intentional, CSRF-protected POST.
-        request.session.flush()
+        logout(request)
         return redirect("login")
 
     def get(self, request, *args, **kwargs):
-        # Do not log out on GET requests.
         return redirect("login")
 
 

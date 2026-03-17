@@ -1,13 +1,22 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
 from .models import Users, Person, Address
 
 
 @admin.register(Users)
-class UsersAdmin(admin.ModelAdmin):
-    list_display = ("username", "email", "first_name", "middle_name", "last_name", "name_suffix", "is_active", "created_at")
+class UsersAdmin(UserAdmin):
+    list_display = ("username", "email", "first_name", "middle_name", "last_name", "name_suffix", "is_active", "date_joined")
     search_fields = ("username", "email", "first_name", "middle_name", "last_name", "name_suffix")
-    list_filter = ("is_active", "created_at")
-    ordering = ("-created_at",)
+    list_filter = ("is_active", "is_staff", "date_joined")
+    ordering = ("-date_joined",)
+
+    # Extend the default UserAdmin fieldsets to include custom fields
+    fieldsets = UserAdmin.fieldsets + (
+        ("Additional Info", {"fields": ("middle_name", "name_suffix")}),
+    )
+    add_fieldsets = UserAdmin.add_fieldsets + (
+        ("Additional Info", {"fields": ("middle_name", "name_suffix")}),
+    )
 
 
 @admin.register(Person)

@@ -1,5 +1,6 @@
 import string
 
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.crypto import get_random_string
 
@@ -13,17 +14,10 @@ def generate_anonymous_id():
             return candidate
 
 
-class Users(models.Model):
-    username = models.CharField(max_length=150, unique=True)
-    email = models.EmailField(unique=True)
-    password = models.CharField(max_length=255)
-    first_name = models.CharField(max_length=150, blank=True)
+class Users(AbstractUser):
     middle_name = models.CharField(max_length=150, blank=True)
-    last_name = models.CharField(max_length=150, blank=True)
     name_suffix = models.CharField(max_length=20, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    is_active = models.BooleanField(default=True)
 
     class Meta:
         verbose_name_plural = "Users"

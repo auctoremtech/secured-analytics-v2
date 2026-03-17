@@ -1,7 +1,8 @@
 from django.test import TestCase, Client
 from django.urls import reverse
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import make_password, check_password
 from .models import Users, Person
+from .admin import UsersAdminForm
 
 
 class WelcomePageViewTest(TestCase):
@@ -539,4 +540,54 @@ class LoginPageViewTest(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Too many failed login attempts")
+
+    def test_login_accepts_legacy_plaintext_and_upgrades_hash(self):
+        """Legacy plaintext passwords can still log in and are upgraded to hash."""
+        legacy_user = Users.objects.create(
+            username="legacyuser",
+            email="legacy@example.com",
+            password="legacyPass123",
+            is_active=True,
+        )
+
+        response = self.client.post(
+            reverse("login"),
+            {"username": "legacyuser", "password": "legacyPass123"},
+        )
+
+        self.assertRedirects(response, reverse("welcome"))
+        legacy_user.refresh_from_db()
+        self.assertNotEqual(legacy_user.password, "legacyPass123")
+        self.assertTrue(check_password("legacyPass123", legacy_user.password))
+
+
+class UsersAdminFormTest(TestCase):
+    def test_edit_user_without_new_password_keeps_existing_hash(self):
+        """Editing a user in admin without password change should preserve hash."""
+        existing_hash = make_password("SecurePass123")
+        user = Users.objects.create(
+            username="adminedit",
+            email="adminedit@example.com",
+            password=existing_hash,
+            is_active=True,
+        )
+
+        form = UsersAdminForm(
+            data={
+                "username": "adminedit",
+                "email": "updated@example.com",
+                "password": "",
+                "password_confirm": "",
+                "first_name": "",
+                "middle_name": "",
+                "last_name": "",
+                "name_suffix": "",
+                "is_active": True,
+            },
+            instance=user,
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        saved_user = form.save()
+        self.assertEqual(saved_user.password, existing_hash)
 
