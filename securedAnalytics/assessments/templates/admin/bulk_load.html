@@ -1,0 +1,47 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Bulk Load Assessment{% endblock %}
+
+{% block content %}
+<h2>Bulk Load Assessment Data</h2>
+
+<p>Upload a <strong>plain-text</strong> or <strong>CSV</strong> file to populate an assessment's categories and questions.</p>
+
+<details style="margin-bottom: 1em;">
+  <summary style="cursor: pointer; font-weight: bold;">File Format Help</summary>
+  <div style="margin-top: 0.5em; padding: 0.5em 1em; background: #f8f8f8; border: 1px solid #ddd; border-radius: 4px;">
+    <h4>Plain-Text Format</h4>
+    <pre style="background: #fff; padding: 0.5em; border: 1px solid #eee;">
+I. Category Title (Optional Description)
+    1. First question text
+    2. Second question text
+II. Another Category (Another Description)
+    3. Third question text
+    </pre>
+
+    <h4>CSV Format</h4>
+    <p>Columns: <code>numeral, title, description, question_number, question_text</code></p>
+    <pre style="background: #fff; padding: 0.5em; border: 1px solid #eee;">
+numeral,title,description,question_number,question_text
+I,Category Title,Optional Description,1,First question text
+I,Category Title,Optional Description,2,Second question text
+II,Another Category,Another Description,3,Third question text
+    </pre>
+  </div>
+</details>
+
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  <div style="margin-bottom: 1em;">
+    <label for="id_assessment" style="display: block; font-weight: bold; margin-bottom: 0.3em;">Assessment:</label>
+    {{ form.assessment }}
+  </div>
+  <div style="margin-bottom: 1em;">
+    <label for="id_file" style="display: block; font-weight: bold; margin-bottom: 0.3em;">File:</label>
+    {{ form.file }}
+    <p class="help" style="margin-top: 0.3em;">{{ form.file.help_text }}</p>
+  </div>
+  <input type="submit" value="Upload &amp; Load" class="default" style="padding: 0.5em 2em;">
+</form>
+{% endblock %}

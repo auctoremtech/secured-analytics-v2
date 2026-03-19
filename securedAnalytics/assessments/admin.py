@@ -1,6 +1,8 @@
 from django.contrib import admin
 
-from securedAnalyticsApp.models import SLEQuestion, MERQuestion, OWBQuestion, PSWQuestion, OCLQuestion
+from securedAnalyticsApp.models import (
+    SLEQuestion, MERQuestion, OWBQuestion, PSWQuestion, OCLQuestion,
+)
 
 from .models import (
     SLECategoryProxy,
@@ -21,28 +23,23 @@ from .models import (
 )
 
 
-class SLEQuestionInline(admin.TabularInline):
-    model = SLEQuestion
-    extra = 0
-    ordering = ("number",)
+# ---------------------------------------------------------------------------
+# Base admin classes — shared configuration for all assessment types
+# ---------------------------------------------------------------------------
 
-
-@admin.register(SLECategoryProxy)
-class SLECategoryAdmin(admin.ModelAdmin):
+class BaseCategoryAdmin(admin.ModelAdmin):
     list_display = ("numeral", "title", "description", "order")
     ordering = ("order",)
-    inlines = [SLEQuestionInline]
 
 
-@admin.register(SLEQuestionProxy)
-class SLEQuestionAdmin(admin.ModelAdmin):
+class BaseQuestionAdmin(admin.ModelAdmin):
     list_display = ("number", "category", "text")
     list_filter = ("category",)
+    list_select_related = ("category",)
     ordering = ("number",)
 
 
-@admin.register(SupervisorLeadershipEngagementProxy)
-class SupervisorLeadershipEngagementAdmin(admin.ModelAdmin):
+class BaseAssessmentAdmin(admin.ModelAdmin):
     list_display = ("title", "assessed_at", "updated_at")
     list_filter = ("assessed_at",)
     search_fields = ("title",)
@@ -52,125 +49,39 @@ class SupervisorLeadershipEngagementAdmin(admin.ModelAdmin):
         return False
 
 
-@admin.register(MentalEmotionalResilienceProxy)
-class MentalEmotionalResilienceAdmin(admin.ModelAdmin):
-    list_display = ("title", "assessed_at", "updated_at")
-    list_filter = ("assessed_at",)
-    search_fields = ("title",)
-    ordering = ("-assessed_at",)
+# ---------------------------------------------------------------------------
+# Data-driven registration
+# ---------------------------------------------------------------------------
 
-    def has_add_permission(self, request):
-        return False
-
-
-class MERQuestionInline(admin.TabularInline):
-    model = MERQuestion
-    extra = 0
-    ordering = ("number",)
+_ASSESSMENT_DEFS = [
+    # (category_proxy, question_model, question_proxy, assessment_proxy)
+    (SLECategoryProxy, SLEQuestion, SLEQuestionProxy, SupervisorLeadershipEngagementProxy),
+    (MERCategoryProxy, MERQuestion, MERQuestionProxy, MentalEmotionalResilienceProxy),
+    (OWBCategoryProxy, OWBQuestion, OWBQuestionProxy, OfficerWellbeingProxy),
+    (PSWCategoryProxy, PSWQuestion, PSWQuestionProxy, PsychologicalSafetyProxy),
+    (OCLCategoryProxy, OCLQuestion, OCLQuestionProxy, OrganizationalCultureChangeProxy),
+]
 
 
-@admin.register(MERCategoryProxy)
-class MERCategoryAdmin(admin.ModelAdmin):
-    list_display = ("numeral", "title", "description", "order")
-    ordering = ("order",)
-    inlines = [MERQuestionInline]
+def _register_assessment(cat_proxy, q_model, q_proxy, assess_proxy):
+    """Register category, question, and assessment admin for one assessment type."""
+    inline_cls = type(
+        f"{q_model.__name__}Inline",
+        (admin.TabularInline,),
+        {"model": q_model, "extra": 0, "ordering": ("number",)},
+    )
+    cat_admin = type(
+        f"{cat_proxy.__name__}Admin",
+        (BaseCategoryAdmin,),
+        {"inlines": [inline_cls]},
+    )
+    q_admin = type(f"{q_proxy.__name__}Admin", (BaseQuestionAdmin,), {})
+    assess_admin = type(f"{assess_proxy.__name__}Admin", (BaseAssessmentAdmin,), {})
+
+    admin.site.register(cat_proxy, cat_admin)
+    admin.site.register(q_proxy, q_admin)
+    admin.site.register(assess_proxy, assess_admin)
 
 
-@admin.register(MERQuestionProxy)
-class MERQuestionAdmin(admin.ModelAdmin):
-    list_display = ("number", "category", "text")
-    list_filter = ("category",)
-    ordering = ("number",)
-
-
-@admin.register(OfficerWellbeingProxy)
-class OfficerWellbeingAdmin(admin.ModelAdmin):
-    list_display = ("title", "assessed_at", "updated_at")
-    list_filter = ("assessed_at",)
-    search_fields = ("title",)
-    ordering = ("-assessed_at",)
-
-    def has_add_permission(self, request):
-        return False
-
-
-class OWBQuestionInline(admin.TabularInline):
-    model = OWBQuestion
-    extra = 0
-    ordering = ("number",)
-
-
-@admin.register(OWBCategoryProxy)
-class OWBCategoryAdmin(admin.ModelAdmin):
-    list_display = ("numeral", "title", "description", "order")
-    ordering = ("order",)
-    inlines = [OWBQuestionInline]
-
-
-@admin.register(OWBQuestionProxy)
-class OWBQuestionAdmin(admin.ModelAdmin):
-    list_display = ("number", "category", "text")
-    list_filter = ("category",)
-    ordering = ("number",)
-
-
-@admin.register(PsychologicalSafetyProxy)
-class PsychologicalSafetyAdmin(admin.ModelAdmin):
-    list_display = ("title", "assessed_at", "updated_at")
-    list_filter = ("assessed_at",)
-    search_fields = ("title",)
-    ordering = ("-assessed_at",)
-
-    def has_add_permission(self, request):
-        return False
-
-
-class PSWQuestionInline(admin.TabularInline):
-    model = PSWQuestion
-    extra = 0
-    ordering = ("number",)
-
-
-@admin.register(PSWCategoryProxy)
-class PSWCategoryAdmin(admin.ModelAdmin):
-    list_display = ("numeral", "title", "description", "order")
-    ordering = ("order",)
-    inlines = [PSWQuestionInline]
-
-
-@admin.register(PSWQuestionProxy)
-class PSWQuestionAdmin(admin.ModelAdmin):
-    list_display = ("number", "category", "text")
-    list_filter = ("category",)
-    ordering = ("number",)
-
-
-@admin.register(OrganizationalCultureChangeProxy)
-class OrganizationalCultureChangeAdmin(admin.ModelAdmin):
-    list_display = ("title", "assessed_at", "updated_at")
-    list_filter = ("assessed_at",)
-    search_fields = ("title",)
-    ordering = ("-assessed_at",)
-
-    def has_add_permission(self, request):
-        return False
-
-
-class OCLQuestionInline(admin.TabularInline):
-    model = OCLQuestion
-    extra = 0
-    ordering = ("number",)
-
-
-@admin.register(OCLCategoryProxy)
-class OCLCategoryAdmin(admin.ModelAdmin):
-    list_display = ("numeral", "title", "description", "order")
-    ordering = ("order",)
-    inlines = [OCLQuestionInline]
-
-
-@admin.register(OCLQuestionProxy)
-class OCLQuestionAdmin(admin.ModelAdmin):
-    list_display = ("number", "category", "text")
-    list_filter = ("category",)
-    ordering = ("number",)
+for _def in _ASSESSMENT_DEFS:
+    _register_assessment(*_def)
