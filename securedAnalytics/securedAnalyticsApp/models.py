@@ -153,3 +153,327 @@ class Address(models.Model):
 
     def __str__(self):
         return f"{self.street_address}, {self.city}, {self.state}"
+
+
+class SLECategory(models.Model):
+    """Roman‑numeral section of the Supervisor's Leadership Engagement assessment."""
+
+    NUMERAL_CHOICES = [
+        ("I", "I"),
+        ("II", "II"),
+        ("III", "III"),
+        ("IV", "IV"),
+        ("V", "V"),
+        ("VI", "VI"),
+        ("VII", "VII"),
+    ]
+
+    numeral = models.CharField(max_length=4, choices=NUMERAL_CHOICES, unique=True)
+    title = models.CharField(max_length=255)
+    description = models.CharField(max_length=255, blank=True)
+    order = models.PositiveSmallIntegerField(unique=True)
+
+    class Meta:
+        verbose_name = "SLE Category"
+        verbose_name_plural = "SLE Categories"
+        ordering = ["order"]
+
+    def __str__(self):
+        return f"{self.numeral}. {self.title}"
+
+
+class SLEQuestion(models.Model):
+    """Individual question (Arabic‑numeral sub‑field) within an SLE category."""
+
+    category = models.ForeignKey(
+        SLECategory,
+        on_delete=models.CASCADE,
+        related_name="questions",
+    )
+    number = models.PositiveSmallIntegerField(unique=True)
+    text = models.TextField()
+
+    class Meta:
+        verbose_name = "SLE Question"
+        verbose_name_plural = "SLE Questions"
+        ordering = ["number"]
+
+    def __str__(self):
+        return f"Q{self.number}: {self.text[:80]}"
+
+
+class SupervisorLeadershipEngagement(models.Model):
+    """A single Supervisor's Leadership Engagement assessment instance."""
+
+    title = models.CharField(max_length=255, default="Supervisor's Leadership Engagement")
+    assessed_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Supervisor Leadership Engagement"
+        verbose_name_plural = "Supervisor Leadership Engagements"
+        ordering = ["-assessed_at"]
+
+    def __str__(self):
+        return f"{self.title} ({self.assessed_at:%Y-%m-%d})"
+
+
+class MentalEmotionalResilience(models.Model):
+    """A single Mental and Emotional Resilience in Leadership assessment instance."""
+
+    title = models.CharField(
+        max_length=255,
+        default="Mental and Emotional Resilience in Leadership",
+    )
+    assessed_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Mental and Emotional Resilience in Leadership"
+        verbose_name_plural = "Mental and Emotional Resilience in Leadership"
+        ordering = ["-assessed_at"]
+
+    def __str__(self):
+        return f"{self.title} ({self.assessed_at:%Y-%m-%d})"
+
+
+class MERCategory(models.Model):
+    """Roman-numeral section of the Mental and Emotional Resilience assessment."""
+
+    NUMERAL_CHOICES = [
+        ("I", "I"),
+        ("II", "II"),
+        ("III", "III"),
+        ("IV", "IV"),
+        ("V", "V"),
+        ("VI", "VI"),
+        ("VII", "VII"),
+    ]
+
+    numeral = models.CharField(max_length=4, choices=NUMERAL_CHOICES, unique=True)
+    title = models.CharField(max_length=255)
+    description = models.CharField(max_length=255, blank=True)
+    order = models.PositiveSmallIntegerField(unique=True)
+
+    class Meta:
+        verbose_name = "MER Category"
+        verbose_name_plural = "MER Categories"
+        ordering = ["order"]
+
+    def __str__(self):
+        return f"{self.numeral}. {self.title}"
+
+
+class MERQuestion(models.Model):
+    """Individual question (Arabic-numeral sub-field) within a MER category."""
+
+    category = models.ForeignKey(
+        MERCategory,
+        on_delete=models.CASCADE,
+        related_name="questions",
+    )
+    number = models.PositiveSmallIntegerField(unique=True)
+    text = models.TextField()
+
+    class Meta:
+        verbose_name = "MER Question"
+        verbose_name_plural = "MER Questions"
+        ordering = ["number"]
+
+    def __str__(self):
+        return f"Q{self.number}: {self.text[:80]}"
+
+
+class OfficerWellbeing(models.Model):
+    """A single Officer Wellbeing assessment instance."""
+
+    title = models.CharField(max_length=255, default="Officer Wellbeing")
+    assessed_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Officer Wellbeing"
+        verbose_name_plural = "Officer Wellbeing"
+        ordering = ["-assessed_at"]
+
+    def __str__(self):
+        return f"{self.title} ({self.assessed_at:%Y-%m-%d})"
+
+
+class OWBCategory(models.Model):
+    """Roman-numeral section of the Officer Wellbeing assessment."""
+
+    NUMERAL_CHOICES = [
+        ("I", "I"),
+        ("II", "II"),
+        ("III", "III"),
+        ("IV", "IV"),
+        ("V", "V"),
+        ("VI", "VI"),
+        ("VII", "VII"),
+    ]
+
+    numeral = models.CharField(max_length=4, choices=NUMERAL_CHOICES, unique=True)
+    title = models.CharField(max_length=255)
+    description = models.CharField(max_length=255, blank=True)
+    order = models.PositiveSmallIntegerField(unique=True)
+
+    class Meta:
+        verbose_name = "OWB Category"
+        verbose_name_plural = "OWB Categories"
+        ordering = ["order"]
+
+    def __str__(self):
+        return f"{self.numeral}. {self.title}"
+
+
+class OWBQuestion(models.Model):
+    """Individual question (Arabic-numeral sub-field) within an OWB category."""
+
+    category = models.ForeignKey(
+        OWBCategory,
+        on_delete=models.CASCADE,
+        related_name="questions",
+    )
+    number = models.PositiveSmallIntegerField(unique=True)
+    text = models.TextField()
+
+    class Meta:
+        verbose_name = "OWB Question"
+        verbose_name_plural = "OWB Questions"
+        ordering = ["number"]
+
+    def __str__(self):
+        return f"Q{self.number}: {self.text[:80]}"
+
+
+class PsychologicalSafety(models.Model):
+    """A single Psychological Safety in the Workplace assessment instance."""
+
+    title = models.CharField(
+        max_length=255,
+        default="Psychological Safety in the Workplace",
+    )
+    assessed_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Psychological Safety in the Workplace"
+        verbose_name_plural = "Psychological Safety in the Workplace"
+        ordering = ["-assessed_at"]
+
+    def __str__(self):
+        return f"{self.title} ({self.assessed_at:%Y-%m-%d})"
+
+
+class PSWCategory(models.Model):
+    """Roman-numeral section of the Psychological Safety assessment."""
+
+    NUMERAL_CHOICES = [
+        ("I", "I"),
+        ("II", "II"),
+        ("III", "III"),
+        ("IV", "IV"),
+        ("V", "V"),
+        ("VI", "VI"),
+        ("VII", "VII"),
+    ]
+
+    numeral = models.CharField(max_length=4, choices=NUMERAL_CHOICES, unique=True)
+    title = models.CharField(max_length=255)
+    description = models.CharField(max_length=255, blank=True)
+    order = models.PositiveSmallIntegerField(unique=True)
+
+    class Meta:
+        verbose_name = "PSW Category"
+        verbose_name_plural = "PSW Categories"
+        ordering = ["order"]
+
+    def __str__(self):
+        return f"{self.numeral}. {self.title}"
+
+
+class PSWQuestion(models.Model):
+    """Individual question (Arabic-numeral sub-field) within a PSW category."""
+
+    category = models.ForeignKey(
+        PSWCategory,
+        on_delete=models.CASCADE,
+        related_name="questions",
+    )
+    number = models.PositiveSmallIntegerField(unique=True)
+    text = models.TextField()
+
+    class Meta:
+        verbose_name = "PSW Question"
+        verbose_name_plural = "PSW Questions"
+        ordering = ["number"]
+
+    def __str__(self):
+        return f"Q{self.number}: {self.text[:80]}"
+
+
+class OrganizationalCultureChange(models.Model):
+    """A single Organizational Culture and Leadership Change assessment instance."""
+
+    title = models.CharField(
+        max_length=255,
+        default="Organizational Culture and Leadership Change",
+    )
+    assessed_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Organizational Culture and Leadership Change"
+        verbose_name_plural = "Organizational Culture and Leadership Change"
+        ordering = ["-assessed_at"]
+
+    def __str__(self):
+        return f"{self.title} ({self.assessed_at:%Y-%m-%d})"
+
+
+class OCLCategory(models.Model):
+    """Roman-numeral section of the Organizational Culture and Leadership Change assessment."""
+
+    NUMERAL_CHOICES = [
+        ("I", "I"),
+        ("II", "II"),
+        ("III", "III"),
+        ("IV", "IV"),
+        ("V", "V"),
+        ("VI", "VI"),
+        ("VII", "VII"),
+    ]
+
+    numeral = models.CharField(max_length=4, choices=NUMERAL_CHOICES, unique=True)
+    title = models.CharField(max_length=255)
+    description = models.CharField(max_length=255, blank=True)
+    order = models.PositiveSmallIntegerField(unique=True)
+
+    class Meta:
+        verbose_name = "OCL Category"
+        verbose_name_plural = "OCL Categories"
+        ordering = ["order"]
+
+    def __str__(self):
+        return f"{self.numeral}. {self.title}"
+
+
+class OCLQuestion(models.Model):
+    """Individual question (Arabic-numeral sub-field) within an OCL category."""
+
+    category = models.ForeignKey(
+        OCLCategory,
+        on_delete=models.CASCADE,
+        related_name="questions",
+    )
+    number = models.PositiveSmallIntegerField(unique=True)
+    text = models.TextField()
+
+    class Meta:
+        verbose_name = "OCL Question"
+        verbose_name_plural = "OCL Questions"
+        ordering = ["number"]
+
+    def __str__(self):
+        return f"Q{self.number}: {self.text[:80]}"
