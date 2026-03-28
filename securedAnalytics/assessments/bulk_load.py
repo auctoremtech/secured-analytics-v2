@@ -1,11 +1,11 @@
 import csv
 import io
+import logging
 import re
 
-import docx
-import fitz
 from django import forms
 from django.contrib import admin, messages
+from django.contrib.admin.views.decorators import staff_member_required
 from django.db import transaction
 from django.shortcuts import redirect, render
 from django.urls import path
@@ -55,10 +55,18 @@ ASSESSMENT_CHOICES = [("", "— Select Assessment —")] + [
     (key, info["label"]) for key, info in ASSESSMENT_REGISTRY.items()
 ]
 
+# Matches any standard Roman numeral (I – XXX and beyond) at the start of a line
+# followed by a period, then the category title, and an optional parenthesised description.
 ROMAN_PATTERN = re.compile(
-    r"^(I{1,3}|IV|VI{0,2}|VII)\.\s+(.+?)(?:\s*\((.+)\))?\s*$"
+    r"^(M{0,3}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3}))"
+    r"\.\s+(.+?)(?:\s*\((.+)\))?\s*$"
 )
 QUESTION_PATTERN = re.compile(r"^(\d+)\.\s+(.+)$")
+
+
+logger = logging.getLogger(__name__)
+
+ALLOWED_EXTENSIONS = {".txt", ".csv", ".docx", ".pdf"}
 
 
 class BulkLoadForm(forms.Form):
@@ -67,6 +75,15 @@ class BulkLoadForm(forms.Form):
         help_text="Upload a Word (.docx), PDF (.pdf), CSV (.csv), or plain-text (.txt) file. "
         "Content should have Roman-numeral headings (e.g. I. Title) followed by numbered questions.",
     )
+
+    def clean_file(self):
+        uploaded = self.cleaned_data["file"]
+        ext = "." + uploaded.name.rsplit(".", 1)[-1].lower() if "." in uploaded.name else ""
+        if ext not in ALLOWED_EXTENSIONS:
+            raise forms.ValidationError(
+                f"Unsupported file type. Allowed: {', '.join(sorted(ALLOWED_EXTENSIONS))}"
+            )
+        return uploaded
 
 
 def _parse_text(content):
@@ -80,7 +97,7 @@ def _parse_text(content):
             continue
 
         roman_match = ROMAN_PATTERN.match(line)
-        if roman_match:
+        if roman_match and roman_match.group(1):
             current_category = {
                 "numeral": roman_match.group(1),
                 "title": roman_match.group(2).strip(),
@@ -131,6 +148,8 @@ def _parse_csv(content):
 
 def _parse_docx(file_obj):
     """Extract text from a .docx file and parse it."""
+    import docx
+
     document = docx.Document(file_obj)
     lines = [para.text for para in document.paragraphs]
     return _parse_text("\n".join(lines))
@@ -138,18 +157,17 @@ def _parse_docx(file_obj):
 
 def _parse_pdf(file_obj):
     """Extract text from a PDF file and parse it."""
+    import fitz
+
     raw_bytes = file_obj.read()
     doc = fitz.open(stream=raw_bytes, filetype="pdf")
-    lines = []
-    for page in doc:
-        lines.append(page.get_text())
+    text = "\n".join(page.get_text() for page in doc)
     doc.close()
-    return _parse_text("\n".join(lines))
+    return _parse_text(text)
 
 
+@staff_member_required
 def bulk_load_view(request):
-    if not request.user.is_staff:
-        return redirect("admin:login")
 
     if request.method == "POST":
         form = BulkLoadForm(request.POST, request.FILES)
@@ -181,8 +199,9 @@ def bulk_load_view(request):
             except UnicodeDecodeError:
                 messages.error(request, "File must be UTF-8 encoded text.")
                 return redirect("admin:bulk_load")
-            except Exception as exc:
-                messages.error(request, f"Error reading file: {exc}")
+            except Exception:
+                logger.exception("Bulk load file parsing error")
+                messages.error(request, "Error reading file. Please check the file format and try again.")
                 return redirect("admin:bulk_load")
 
             if not categories:

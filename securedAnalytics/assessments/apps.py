@@ -22,6 +22,10 @@ _MODEL_ORDER = [
 _APP_ORDER = ["securedAnalyticsApp", "assessments"]
 
 
+# Pre-compute prefix→index mapping for O(1) lookup instead of O(n) scan
+_MODEL_ORDER_MAP = {prefix: i for i, prefix in enumerate(_MODEL_ORDER)}
+
+
 class AssessmentsConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "assessments"
@@ -35,12 +39,12 @@ class AssessmentsConfig(AppConfig):
         def _custom_get_app_list(self, request, app_label=None):
             app_list = _original_get_app_list(self, request, app_label)
 
+            sentinel = len(_MODEL_ORDER)
             for app in app_list:
                 if app["app_label"] == "assessments":
-                    sentinel = len(_MODEL_ORDER)
                     app["models"].sort(
                         key=lambda m: next(
-                            (i for i, prefix in enumerate(_MODEL_ORDER) if prefix in m.get("name", "")),
+                            (_MODEL_ORDER_MAP[prefix] for prefix in _MODEL_ORDER_MAP if prefix in m.get("name", "")),
                             sentinel,
                         )
                     )

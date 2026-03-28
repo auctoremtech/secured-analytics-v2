@@ -164,10 +164,17 @@ class BaseAssessmentCategory(models.Model):
 
     NUMERAL_CHOICES = [
         ("I", "I"), ("II", "II"), ("III", "III"), ("IV", "IV"),
-        ("V", "V"), ("VI", "VI"), ("VII", "VII"),
+        ("V", "V"), ("VI", "VI"), ("VII", "VII"), ("VIII", "VIII"),
+        ("IX", "IX"), ("X", "X"), ("XI", "XI"), ("XII", "XII"),
+        ("XIII", "XIII"), ("XIV", "XIV"), ("XV", "XV"), ("XVI", "XVI"),
+        ("XVII", "XVII"), ("XVIII", "XVIII"), ("XIX", "XIX"), ("XX", "XX"),
+        ("XXI", "XXI"), ("XXII", "XXII"), ("XXIII", "XXIII"),
+        ("XXIV", "XXIV"), ("XXV", "XXV"), ("XXVI", "XXVI"),
+        ("XXVII", "XXVII"), ("XXVIII", "XXVIII"), ("XXIX", "XXIX"),
+        ("XXX", "XXX"),
     ]
 
-    numeral = models.CharField(max_length=4, choices=NUMERAL_CHOICES, unique=True)
+    numeral = models.CharField(max_length=10, choices=NUMERAL_CHOICES, unique=True)
     title = models.CharField(max_length=255)
     description = models.CharField(max_length=255, blank=True)
     order = models.PositiveSmallIntegerField(unique=True)
@@ -220,7 +227,7 @@ class SLECategory(BaseAssessmentCategory):
 
 class SLEQuestion(BaseAssessmentQuestion):
     category = models.ForeignKey(
-        SLECategory, on_delete=models.CASCADE, related_name="questions",
+        SLECategory, on_delete=models.CASCADE, related_name="questions", db_index=True,
     )
 
     class Meta(BaseAssessmentQuestion.Meta):
@@ -248,7 +255,7 @@ class MERCategory(BaseAssessmentCategory):
 
 class MERQuestion(BaseAssessmentQuestion):
     category = models.ForeignKey(
-        MERCategory, on_delete=models.CASCADE, related_name="questions",
+        MERCategory, on_delete=models.CASCADE, related_name="questions", db_index=True,
     )
 
     class Meta(BaseAssessmentQuestion.Meta):
@@ -278,7 +285,7 @@ class OWBCategory(BaseAssessmentCategory):
 
 class OWBQuestion(BaseAssessmentQuestion):
     category = models.ForeignKey(
-        OWBCategory, on_delete=models.CASCADE, related_name="questions",
+        OWBCategory, on_delete=models.CASCADE, related_name="questions", db_index=True,
     )
 
     class Meta(BaseAssessmentQuestion.Meta):
@@ -306,7 +313,7 @@ class PSWCategory(BaseAssessmentCategory):
 
 class PSWQuestion(BaseAssessmentQuestion):
     category = models.ForeignKey(
-        PSWCategory, on_delete=models.CASCADE, related_name="questions",
+        PSWCategory, on_delete=models.CASCADE, related_name="questions", db_index=True,
     )
 
     class Meta(BaseAssessmentQuestion.Meta):
@@ -336,7 +343,7 @@ class OCLCategory(BaseAssessmentCategory):
 
 class OCLQuestion(BaseAssessmentQuestion):
     category = models.ForeignKey(
-        OCLCategory, on_delete=models.CASCADE, related_name="questions",
+        OCLCategory, on_delete=models.CASCADE, related_name="questions", db_index=True,
     )
 
     class Meta(BaseAssessmentQuestion.Meta):

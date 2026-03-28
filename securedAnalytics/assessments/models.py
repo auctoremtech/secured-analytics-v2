@@ -16,106 +16,43 @@ from securedAnalyticsApp.models import (
     OCLQuestion,
 )
 
+# Non-breaking-space indent used uniformly for sub-item proxy verbose names
+_INDENT = "\u00a0\u00a0\u00a0\u00a0"
 
-class SLECategoryProxy(SLECategory):
-    class Meta:
-        proxy = True
-        verbose_name = "\u00a0\u00a0\u00a0\u00a0SLE Category"
-        verbose_name_plural = "\u00a0\u00a0\u00a0\u00a0SLE Categories"
-
-
-class SLEQuestionProxy(SLEQuestion):
-    class Meta:
-        proxy = True
-        verbose_name = "    SLE Question"
-        verbose_name_plural = "    SLE Questions"
-
-
-class SupervisorLeadershipEngagementProxy(SupervisorLeadershipEngagement):
-    class Meta:
-        proxy = True
-        verbose_name = SupervisorLeadershipEngagement._meta.verbose_name
-        verbose_name_plural = SupervisorLeadershipEngagement._meta.verbose_name_plural
-
-
-class MentalEmotionalResilienceProxy(MentalEmotionalResilience):
-    class Meta:
-        proxy = True
-        verbose_name = MentalEmotionalResilience._meta.verbose_name
-        verbose_name_plural = MentalEmotionalResilience._meta.verbose_name_plural
-
-
-class MERCategoryProxy(MERCategory):
-    class Meta:
-        proxy = True
-        verbose_name = "    MER Category"
-        verbose_name_plural = "    MER Categories"
+# (proxy_name, parent_model, verbose_name, verbose_name_plural)
+_PROXY_DEFS = [
+    # SLE
+    ("SLECategoryProxy", SLECategory, f"{_INDENT}SLE Category", f"{_INDENT}SLE Categories"),
+    ("SLEQuestionProxy", SLEQuestion, f"{_INDENT}SLE Question", f"{_INDENT}SLE Questions"),
+    ("SupervisorLeadershipEngagementProxy", SupervisorLeadershipEngagement, None, None),
+    # MER
+    ("MERCategoryProxy", MERCategory, f"{_INDENT}MER Category", f"{_INDENT}MER Categories"),
+    ("MERQuestionProxy", MERQuestion, f"{_INDENT}MER Question", f"{_INDENT}MER Questions"),
+    ("MentalEmotionalResilienceProxy", MentalEmotionalResilience, None, None),
+    # OWB
+    ("OWBCategoryProxy", OWBCategory, f"{_INDENT}OWB Category", f"{_INDENT}OWB Categories"),
+    ("OWBQuestionProxy", OWBQuestion, f"{_INDENT}OWB Question", f"{_INDENT}OWB Questions"),
+    ("OfficerWellbeingProxy", OfficerWellbeing, None, None),
+    # PSW
+    ("PSWCategoryProxy", PSWCategory, f"{_INDENT}PSW Category", f"{_INDENT}PSW Categories"),
+    ("PSWQuestionProxy", PSWQuestion, f"{_INDENT}PSW Question", f"{_INDENT}PSW Questions"),
+    ("PsychologicalSafetyProxy", PsychologicalSafety, None, None),
+    # OCL
+    ("OCLCategoryProxy", OCLCategory, f"{_INDENT}OCL Category", f"{_INDENT}OCL Categories"),
+    ("OCLQuestionProxy", OCLQuestion, f"{_INDENT}OCL Question", f"{_INDENT}OCL Questions"),
+    ("OrganizationalCultureChangeProxy", OrganizationalCultureChange, None, None),
+]
 
 
-class MERQuestionProxy(MERQuestion):
-    class Meta:
-        proxy = True
-        verbose_name = "    MER Question"
-        verbose_name_plural = "    MER Questions"
-
-class OfficerWellbeingProxy(OfficerWellbeing):
-    class Meta:
-        proxy = True
-        verbose_name = OfficerWellbeing._meta.verbose_name
-        verbose_name_plural = OfficerWellbeing._meta.verbose_name_plural
+def _make_proxy(name, parent, vn, vnp):
+    """Create a proxy model class dynamically."""
+    meta_attrs = {"proxy": True, "app_label": "assessments"}
+    meta_attrs["verbose_name"] = vn if vn else parent._meta.verbose_name
+    meta_attrs["verbose_name_plural"] = vnp if vnp else parent._meta.verbose_name_plural
+    meta_cls = type("Meta", (), meta_attrs)
+    return type(name, (parent,), {"Meta": meta_cls, "__module__": __name__})
 
 
-class OWBCategoryProxy(OWBCategory):
-    class Meta:
-        proxy = True
-        verbose_name = "\u00a0\u00a0\u00a0\u00a0OWB Category"
-        verbose_name_plural = "\u00a0\u00a0\u00a0\u00a0OWB Categories"
-
-
-class OWBQuestionProxy(OWBQuestion):
-    class Meta:
-        proxy = True
-        verbose_name = "\u00a0\u00a0\u00a0\u00a0OWB Question"
-        verbose_name_plural = "\u00a0\u00a0\u00a0\u00a0OWB Questions"
-
-
-class PsychologicalSafetyProxy(PsychologicalSafety):
-    class Meta:
-        proxy = True
-        verbose_name = PsychologicalSafety._meta.verbose_name
-        verbose_name_plural = PsychologicalSafety._meta.verbose_name_plural
-
-
-class PSWCategoryProxy(PSWCategory):
-    class Meta:
-        proxy = True
-        verbose_name = "\u00a0\u00a0\u00a0\u00a0PSW Category"
-        verbose_name_plural = "\u00a0\u00a0\u00a0\u00a0PSW Categories"
-
-
-class PSWQuestionProxy(PSWQuestion):
-    class Meta:
-        proxy = True
-        verbose_name = "\u00a0\u00a0\u00a0\u00a0PSW Question"
-        verbose_name_plural = "\u00a0\u00a0\u00a0\u00a0PSW Questions"
-
-
-class OrganizationalCultureChangeProxy(OrganizationalCultureChange):
-    class Meta:
-        proxy = True
-        verbose_name = OrganizationalCultureChange._meta.verbose_name
-        verbose_name_plural = OrganizationalCultureChange._meta.verbose_name_plural
-
-
-class OCLCategoryProxy(OCLCategory):
-    class Meta:
-        proxy = True
-        verbose_name = "\u00a0\u00a0\u00a0\u00a0OCL Category"
-        verbose_name_plural = "\u00a0\u00a0\u00a0\u00a0OCL Categories"
-
-
-class OCLQuestionProxy(OCLQuestion):
-    class Meta:
-        proxy = True
-        verbose_name = "\u00a0\u00a0\u00a0\u00a0OCL Question"
-        verbose_name_plural = "\u00a0\u00a0\u00a0\u00a0OCL Questions"
+# Generate all proxy models and inject into module namespace
+for _name, _parent, _vn, _vnp in _PROXY_DEFS:
+    globals()[_name] = _make_proxy(_name, _parent, _vn, _vnp)

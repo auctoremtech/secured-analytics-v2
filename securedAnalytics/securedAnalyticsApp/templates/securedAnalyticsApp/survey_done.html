@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assessment Complete - SECUREDAnalytics</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            background: #f5f7fa;
+            color: #243447;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            width: 90%;
+            max-width: 760px;
+            background: #ffffff;
+            border: 1px solid #dce3ea;
+            border-radius: 8px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+            padding: 40px 32px;
+            text-align: center;
+        }
+        .check-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+        h1 {
+            margin-top: 0;
+            color: #1a2634;
+            font-size: 28px;
+        }
+        p {
+            color: #607d8b;
+            font-size: 16px;
+            line-height: 1.6;
+            margin: 12px 0 28px 0;
+        }
+        .actions {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+        }
+        .btn {
+            border: none;
+            background: #26a69a;
+            color: #ffffff;
+            padding: 12px 36px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background: #2bbbad;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="check-icon">&#10003;</div>
+        <h1>Assessment Complete</h1>
+        <p>You have completed all assessment questions.<br>
+        Thank you for your responses.</p>
+        <div class="actions">
+            <a class="btn" href="{% url 'survey' %}">Start Over</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -521,10 +521,12 @@
 
                         <div class="button-group">
                             <button type="submit" class="btn btn-submit">Save Information</button>
-                            <form method="post" action="{% url 'logout' %}" style="display: inline; margin: 0;">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-cancel">Cancel</button>
-                            </form>
+                        </div>
+                    </form>
+                    <form method="post" action="{% url 'logout' %}" style="display: inline; margin: 0;">
+                        {% csrf_token %}
+                        <div class="button-group" style="margin-top: 10px;">
+                            <button type="submit" class="btn btn-cancel">Cancel</button>
                         </div>
                     </form>
                 </div>

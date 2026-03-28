@@ -11,6 +11,8 @@ from .views import (
     DemographicsView,
     DemographicsSavedView,
     LogoutView,
+    SurveyView,
+    SurveyDoneView,
 )
 
 urlpatterns = [
@@ -21,6 +23,8 @@ urlpatterns = [
     path("demographics/", DemographicsView.as_view(), name="demographics"),
     path("demographics/saved/", DemographicsSavedView.as_view(), name="demographics_saved"),
     path("logout/", LogoutView.as_view(), name="logout"),
+    path("survey/", SurveyView.as_view(), name="survey"),
+    path("survey/done/", SurveyDoneView.as_view(), name="survey_done"),
     path("persons/", PersonListView.as_view(), name="person_list"),
     path("persons/<int:pk>/", PersonDetailView.as_view(), name="person_detail"),
     path("persons/create/", PersonCreateView.as_view(), name="person_create"),

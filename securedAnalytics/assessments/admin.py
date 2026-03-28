@@ -38,6 +38,13 @@ class BaseQuestionAdmin(admin.ModelAdmin):
     list_select_related = ("category",)
     ordering = ("number",)
 
+    def get_changeform_initial_data(self, request):
+        initial = super().get_changeform_initial_data(request)
+        if "number" not in initial:
+            max_num = self.model.objects.order_by("-number").values_list("number", flat=True).first()
+            initial["number"] = (max_num or 0) + 1
+        return initial
+
 
 class BaseAssessmentAdmin(admin.ModelAdmin):
     list_display = ("title", "assessed_at", "updated_at")
@@ -68,7 +75,15 @@ def _register_assessment(cat_proxy, q_model, q_proxy, assess_proxy):
     inline_cls = type(
         f"{q_model.__name__}Inline",
         (admin.TabularInline,),
-        {"model": q_model, "extra": 0, "ordering": ("number",)},
+        {
+            "model": q_model,
+            "extra": 0,
+            "ordering": ("number",),
+            "classes": ("question-inline",),
+            "Media": type("Media", (), {
+                "js": ("assessments/js/auto_increment_inline.js",),
+            }),
+        },
     )
     cat_admin = type(
         f"{cat_proxy.__name__}Admin",
