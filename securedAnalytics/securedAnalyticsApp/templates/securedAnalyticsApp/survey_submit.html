@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assessment Complete - SECUREDAnalytics</title>
+    <title>Answers Submitted - SECUREDAnalytics</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -25,7 +25,7 @@
             padding: 40px 32px;
             text-align: center;
         }
-        .check-icon {
+        .submit-icon {
             font-size: 64px;
             margin-bottom: 16px;
         }
@@ -38,31 +38,51 @@
             color: #607d8b;
             font-size: 16px;
             line-height: 1.6;
-            margin: 12px 0 28px 0;
+            margin: 12px 0 0 0;
+        }
+        .info-box {
+            margin: 28px 0;
+            padding: 20px 24px;
+            background: #edf6fd;
+            border: 1px solid #bfd5e8;
+            border-radius: 6px;
+            text-align: left;
+        }
+        .info-box h2 {
+            font-size: 18px;
+            color: #0d3a60;
+            margin: 0 0 10px 0;
+        }
+        .info-box p {
+            color: #37474f;
+            font-size: 15px;
+            margin: 6px 0;
+        }
+        .info-box ul {
+            margin: 10px 0 0 20px;
+            color: #37474f;
+            font-size: 15px;
+            line-height: 1.7;
         }
         .actions {
             display: flex;
             justify-content: center;
             gap: 16px;
+            margin-top: 28px;
         }
         .btn {
             border: none;
             background: #26a69a;
             color: #ffffff;
-            padding: 12px 36px;
+            padding: 14px 42px;
             border-radius: 4px;
             text-decoration: none;
             font-size: 16px;
             cursor: pointer;
+            transition: background 0.2s;
         }
         .btn:hover {
             background: #2bbbad;
-        }
-        .btn-review {
-            background: #546e7a;
-        }
-        .btn-review:hover {
-            background: #607d8b;
         }
 
         /* Theme toggle */
@@ -92,13 +112,18 @@
         }
         .dark-theme h1 { color: #e0e6ed; }
         .dark-theme p { color: #b0bec5; }
+        .dark-theme .info-box {
+            background: #1e2d3a;
+            border-color: #3a4a5a;
+        }
+        .dark-theme .info-box h2 { color: #80b0d0; }
+        .dark-theme .info-box p { color: #b0bec5; }
+        .dark-theme .info-box ul { color: #b0bec5; }
         .dark-theme .theme-toggle {
             background-color: #2d3a47;
             color: #e0e6ed;
             border-color: #4a5a6a;
         }
-        .dark-theme .btn-review { background: #3a4a5a; }
-        .dark-theme .btn-review:hover { background: #4a5a6a; }
         .dark-theme .theme-toggle:hover { background-color: #3a4a5a; }
     </style>
 </head>
@@ -107,18 +132,24 @@
         <span class="theme-icon">🌙</span> Toggle Theme
     </button>
     <div class="container">
-        <div class="check-icon">&#10003;</div>
-        <h1>Assessment Complete</h1>
-        <p>You have answered all assessment questions.<br>
-        You may review your answers before submitting, or submit now to finalize your responses.</p>
+        <div class="submit-icon">🚀</div>
+        <h1>Answers Submitted Successfully</h1>
+        <p>Thank you for completing the assessment. Your responses have been recorded.</p>
+
+        <div class="info-box">
+            <h2>What Happens Next?</h2>
+            <p>A personalized dashboard has been created for you. Your dashboard is designed to assist you as you utilize the SECUREDAnalytics application and will provide:</p>
+            <ul>
+                <li>Personalized insights based on your assessment results</li>
+                <li>Progress tracking through check-ins and goal setting</li>
+                <li>Access to support resources and communication tools</li>
+                <li>Analytics and reports tailored to your profile</li>
+                <li>Guided onboarding materials to help you get started</li>
+            </ul>
+        </div>
+
         <div class="actions">
-            <form method="post" action="{% url 'survey_done' %}">
-                {% csrf_token %}
-                <div class="actions">
-                    <button type="submit" name="action" value="review" class="btn btn-review">Review Questions</button>
-                    <button type="submit" name="action" value="submit" class="btn">Submit Answers</button>
-                </div>
-            </form>
+            <a class="btn" href="{% url 'dashboard' %}">Proceed to Dashboard</a>
         </div>
     </div>
 

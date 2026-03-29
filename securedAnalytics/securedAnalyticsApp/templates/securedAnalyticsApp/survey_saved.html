@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assessment Complete - SECUREDAnalytics</title>
+    <title>Progress Saved - SECUREDAnalytics</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -25,7 +25,7 @@
             padding: 40px 32px;
             text-align: center;
         }
-        .check-icon {
+        .save-icon {
             font-size: 64px;
             margin-bottom: 16px;
         }
@@ -58,11 +58,11 @@
         .btn:hover {
             background: #2bbbad;
         }
-        .btn-review {
-            background: #546e7a;
+        .btn-exit {
+            background: #e74c3c;
         }
-        .btn-review:hover {
-            background: #607d8b;
+        .btn-exit:hover {
+            background: #c0392b;
         }
 
         /* Theme toggle */
@@ -97,8 +97,6 @@
             color: #e0e6ed;
             border-color: #4a5a6a;
         }
-        .dark-theme .btn-review { background: #3a4a5a; }
-        .dark-theme .btn-review:hover { background: #4a5a6a; }
         .dark-theme .theme-toggle:hover { background-color: #3a4a5a; }
     </style>
 </head>
@@ -107,17 +105,15 @@
         <span class="theme-icon">🌙</span> Toggle Theme
     </button>
     <div class="container">
-        <div class="check-icon">&#10003;</div>
-        <h1>Assessment Complete</h1>
-        <p>You have answered all assessment questions.<br>
-        You may review your answers before submitting, or submit now to finalize your responses.</p>
+        <div class="save-icon">&#128190;</div>
+        <h1>Progress Saved</h1>
+        <p>Your survey progress has been saved.<br>
+        You can safely close this page and return at any time to continue from where you left off.</p>
         <div class="actions">
-            <form method="post" action="{% url 'survey_done' %}">
+            <a class="btn" href="{% url 'survey' %}">Continue Survey</a>
+            <form method="post" action="{% url 'logout' %}" style="margin: 0;">
                 {% csrf_token %}
-                <div class="actions">
-                    <button type="submit" name="action" value="review" class="btn btn-review">Review Questions</button>
-                    <button type="submit" name="action" value="submit" class="btn">Submit Answers</button>
-                </div>
+                <button type="submit" class="btn btn-exit">Exit Survey</button>
             </form>
         </div>
     </div>

@@ -61,9 +61,54 @@
             color: #607d8b;
             font-size: 14px;
         }
+
+        /* Theme toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 12px;
+            right: 16px;
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            z-index: 100;
+        }
+        .theme-toggle:hover { background-color: #f0f0f0; }
+        .theme-icon { margin-right: 8px; }
+
+        /* Dark theme */
+        .dark-theme { background: #1e2a35; color: #e0e6ed; }
+        .dark-theme .container {
+            background: #263240;
+            border-color: #3a4a5a;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+        }
+        .dark-theme h1 { color: #e0e6ed; }
+        .dark-theme p.subtitle { color: #8899a6; }
+        .dark-theme .assessment-link {
+            background: #1e2d3a;
+            border-color: #3a4a5a;
+            color: #80b0d0;
+        }
+        .dark-theme .assessment-link:hover { background: #263240; }
+        .dark-theme .assessment-link .count { color: #8899a6; }
+        .dark-theme p { color: #b0bec5; }
+        .dark-theme .theme-toggle {
+            background-color: #2d3a47;
+            color: #e0e6ed;
+            border-color: #4a5a6a;
+        }
+        .dark-theme .theme-toggle:hover { background-color: #3a4a5a; }
     </style>
 </head>
 <body>
+    <button class="theme-toggle" onclick="toggleTheme()">
+        <span class="theme-icon">🌙</span> Toggle Theme
+    </button>
     <div class="container">
         <h1>Select an Assessment</h1>
         <p class="subtitle">Choose an assessment below to begin.</p>
@@ -83,5 +128,17 @@
         <p>No assessments with questions are available at this time.</p>
         {% endif %}
     </div>
+
+    <script>
+        (function() {
+            if (localStorage.getItem('sa_theme') === 'dark') {
+                document.body.classList.add('dark-theme');
+            }
+        })();
+        function toggleTheme() {
+            document.body.classList.toggle('dark-theme');
+            localStorage.setItem('sa_theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
+        }
+    </script>
 </body>
 </html>

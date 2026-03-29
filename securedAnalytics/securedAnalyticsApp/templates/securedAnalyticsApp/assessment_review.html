@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assessment Review - SECUREDAnalytics</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --sidebar-bg: #1a2634;
+            --sidebar-text: #ffffff;
+            --main-bg: #f5f5f5;
+            --footer-bg: #37474f;
+            --footer-text: #b0bec5;
+            --primary-btn: #26a69a;
+            --primary-btn-hover: #2bbbad;
+            --link-color: #26a69a;
+        }
+
+        .dark-theme {
+            --main-bg: #1e2a35;
+            --sidebar-bg: #1a2634;
+            --footer-bg: #1a2634;
+            --footer-text: #8899a6;
+        }
+        .dark-theme .theme-toggle {
+            background-color: #2d3a47;
+            color: #e0e6ed;
+            border-color: #4a5a6a;
+        }
+        .dark-theme .theme-toggle:hover { background-color: #3a4a5a; }
+        .dark-theme .page-title { color: #e0e6ed; }
+        .dark-theme .page-subtitle { color: #b0bec5; }
+        .dark-theme .question-card {
+            background: #263240;
+            border-color: #3a4a5a;
+        }
+        .dark-theme .question-text { color: #e0e6ed; }
+        .dark-theme .question-number { color: #80b0d0; }
+        .dark-theme .question-meta { color: #8899a6; }
+        .dark-theme .answer-row { color: #e0e6ed; }
+        .dark-theme .answer-value { color: #26a69a; }
+        .dark-theme .answer-not-answered { color: #e57373; }
+        .dark-theme .likert-bar { background-color: #1e2d3a; }
+        .dark-theme .back-link { color: #4fc3f7; }
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            min-height: 100vh;
+            background-color: var(--main-bg);
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 220px;
+            background-color: var(--sidebar-bg);
+            color: var(--sidebar-text);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+        }
+
+        .user-profile {
+            text-align: center;
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .user-avatar { font-size: 12px; color: #b0bec5; margin-bottom: 5px; }
+        .user-name { font-size: 16px; font-weight: bold; margin-bottom: 5px; }
+        .user-role { font-size: 14px; color: #b0bec5; }
+
+        .nav-menu {
+            list-style: none;
+            padding: 10px 0;
+            flex-grow: 1;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: var(--sidebar-text);
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+        .nav-item:hover { background-color: rgba(255, 255, 255, 0.1); }
+        .nav-item.active { background-color: rgba(255, 255, 255, 0.15); }
+        .nav-item.disabled { color: #607d8b; pointer-events: none; }
+        .nav-icon { margin-right: 12px; font-size: 18px; }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 220px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            justify-content: flex-end;
+            padding: 10px 20px;
+            background-color: var(--main-bg);
+        }
+
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .theme-toggle:hover { background-color: #f0f0f0; }
+        .theme-icon { margin-right: 8px; }
+
+        .content-area {
+            flex: 1;
+            padding: 40px 20px;
+            max-width: 860px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 24px;
+            color: var(--link-color);
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .back-link:hover { text-decoration: underline; }
+
+        .page-title {
+            font-size: 28px;
+            color: #1a2634;
+            margin-bottom: 6px;
+        }
+
+        .page-subtitle {
+            font-size: 15px;
+            color: #607d8b;
+            margin-bottom: 32px;
+        }
+
+        /* Question card */
+        .question-card {
+            background: #ffffff;
+            border: 1px solid #dce3ea;
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+        }
+
+        .question-text {
+            font-size: 16px;
+            line-height: 1.5;
+            color: #1a2634;
+            margin-bottom: 10px;
+        }
+
+        .question-number {
+            font-weight: bold;
+            color: #0d3a60;
+        }
+
+        .question-meta {
+            font-size: 13px;
+            color: #90a4ae;
+            margin-bottom: 12px;
+        }
+
+        .answer-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 15px;
+            color: #37474f;
+        }
+
+        .answer-label {
+            font-weight: bold;
+            min-width: 90px;
+        }
+
+        .answer-value {
+            font-weight: bold;
+            color: #26a69a;
+        }
+
+        .answer-not-answered {
+            color: #e57373;
+            font-style: italic;
+        }
+
+        .likert-bar {
+            display: flex;
+            gap: 6px;
+            margin-left: auto;
+            background: #f5f7fa;
+            border-radius: 4px;
+            padding: 4px 8px;
+        }
+
+        .likert-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid #b0bec5;
+            background: transparent;
+        }
+
+        .likert-dot.filled {
+            border-color: #26a69a;
+            background: #26a69a;
+        }
+
+        /* Footer */
+        .footer {
+            background-color: var(--footer-bg);
+            color: var(--footer-text);
+            text-align: center;
+            padding: 15px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="user-profile">
+            <div class="user-avatar">👤</div>
+            <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
+            <div class="user-role">{{ user_role }}</div>
+        </div>
+        <nav>
+            <ul class="nav-menu">
+                <li><a href="{% url 'dashboard' %}" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a></li>
+                <li><a href="#" class="nav-item disabled"><span class="nav-icon">☑️</span> Check-ins</a></li>
+                <li><a href="#" class="nav-item disabled"><span class="nav-icon">🎯</span> Goals</a></li>
+                <li><a href="#" class="nav-item disabled"><span class="nav-icon">💬</span> Support</a></li>
+                <li><a href="{% url 'assessment_history' %}" class="nav-item active"><span class="nav-icon">📋</span> Assessment</a></li>
+                <li><a href="#" class="nav-item disabled"><span class="nav-icon">📈</span> Analytics</a></li>
+                <li><a href="#" class="nav-item disabled"><span class="nav-icon">▶️</span> Onboarding</a></li>
+                <li>
+                    <form method="post" action="{% url 'logout' %}" style="margin: 0;">
+                        {% csrf_token %}
+                        <button type="submit" class="nav-item" style="width: 100%; border: none; background: transparent; text-align: left;">
+                            <span class="nav-icon">🚪</span> Logout
+                        </button>
+                    </form>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="header">
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <span class="theme-icon">🌙</span> Toggle Theme
+            </button>
+        </header>
+
+        <div class="content-area">
+            <a href="{% url 'assessment_history' %}" class="back-link">← Back to Assessment History</a>
+            <h1 class="page-title">Assessment Review</h1>
+            <p class="page-subtitle">Completed {{ progress.updated_at|date:"F j, Y — g:i A" }} · {{ items|length }} questions</p>
+
+            {% for item in items %}
+            <div class="question-card">
+                <p class="question-text">
+                    <span class="question-number">{{ item.number }}.</span> {{ item.text }}
+                </p>
+                <div class="question-meta">{{ item.assessment }} · {{ item.category }}</div>
+                <div class="answer-row">
+                    <span class="answer-label">Your Answer:</span>
+                    {% if item.value %}
+                    <span class="answer-value">{{ item.label }}</span>
+                    <div class="likert-bar">
+                        <div class="likert-dot {% if item.value == '1' %}filled{% endif %}"></div>
+                        <div class="likert-dot {% if item.value == '2' %}filled{% endif %}"></div>
+                        <div class="likert-dot {% if item.value == '3' %}filled{% endif %}"></div>
+                        <div class="likert-dot {% if item.value == '4' %}filled{% endif %}"></div>
+                        <div class="likert-dot {% if item.value == '5' %}filled{% endif %}"></div>
+                    </div>
+                    {% else %}
+                    <span class="answer-not-answered">Not Answered</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <footer class="footer">
+            © SECUREDAnalytics | Powered by LION Institute
+        </footer>
+    </main>
+
+    <script>
+        (function() {
+            if (localStorage.getItem('sa_theme') === 'dark') {
+                document.body.classList.add('dark-theme');
+            }
+        })();
+        function toggleTheme() {
+            document.body.classList.toggle('dark-theme');
+            localStorage.setItem('sa_theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
+        }
+    </script>
+</body>
+</html>

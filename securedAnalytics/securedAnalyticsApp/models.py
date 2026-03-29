@@ -57,7 +57,7 @@ class Person(models.Model):
         ("", "— Select —"),
         ("Officer", "Officer"),
         ("Deputy", "Deputy"),
-        ("trooper", "trooper"),
+        ("trooper", "Trooper"),
         ("Constable", "Constable"),
         ("Detective", "Detective"),
         ("Investigator", "Investigator"),
@@ -359,3 +359,39 @@ class OrganizationalCultureChange(BaseAssessment):
     class Meta(BaseAssessment.Meta):
         verbose_name = "Organizational Culture and Leadership Change"
         verbose_name_plural = "Organizational Culture and Leadership Change"
+
+
+# ---------------------------------------------------------------------------
+# Survey Progress (save & resume)
+# ---------------------------------------------------------------------------
+
+class SurveyProgress(models.Model):
+    """Persists survey state so users can save progress and resume later."""
+
+    STATUS_CHOICES = [
+        ("in_progress", "In Progress"),
+        ("completed", "Completed"),
+    ]
+
+    user = models.ForeignKey(
+        Users, on_delete=models.CASCADE, related_name="survey_sessions",
+    )
+    question_pool = models.JSONField()
+    responses = models.JSONField(default=dict, blank=True)
+    current_page = models.PositiveIntegerField(default=0)
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="in_progress", db_index=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Survey Progress"
+        verbose_name_plural = "Survey Progress"
+        ordering = ["-updated_at"]
+        indexes = [
+            models.Index(fields=["user", "status"], name="idx_survey_user_status"),
+        ]
+
+    def __str__(self):
+        return f"Survey({self.user.username}, {self.status}, page {self.current_page})"

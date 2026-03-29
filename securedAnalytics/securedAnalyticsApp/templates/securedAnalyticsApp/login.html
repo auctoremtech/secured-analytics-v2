@@ -23,8 +23,29 @@
         }
 
         .dark-theme {
-            --main-bg: #263238;
+            --main-bg: #1e2a35;
             --sidebar-bg: #1a2634;
+            --footer-bg: #1a2634;
+            --footer-text: #8899a6;
+        }
+
+        .dark-theme .theme-toggle {
+            background-color: #2d3a47;
+            color: #e0e6ed;
+            border-color: #4a5a6a;
+        }
+        .dark-theme .theme-toggle:hover { background-color: #3a4a5a; }
+        .dark-theme .login-title { color: #e0e6ed; }
+        .dark-theme .form-group label { color: #c8d6e0; }
+        .dark-theme .form-group input {
+            background-color: #2d3a47;
+            color: #e0e6ed;
+            border-color: #4a5a6a;
+        }
+        .dark-theme .forgot-password { color: #b0bec5; }
+        .dark-theme .error-message {
+            background-color: #3b2020 !important;
+            color: #f5a5a5 !important;
         }
 
         body {
@@ -34,73 +55,9 @@
             background-color: var(--main-bg);
         }
 
-        /* Sidebar Styles */
-        .sidebar {
-            width: 220px;
-            background-color: var(--sidebar-bg);
-            color: var(--sidebar-text);
-            display: flex;
-            flex-direction: column;
-            position: fixed;
-            height: 100vh;
-        }
-
-        .user-profile {
-            text-align: center;
-            padding: 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .user-avatar {
-            font-size: 12px;
-            color: #b0bec5;
-            margin-bottom: 5px;
-        }
-
-        .user-name {
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .user-role {
-            font-size: 14px;
-            color: #b0bec5;
-        }
-
-        .nav-menu {
-            list-style: none;
-            padding: 10px 0;
-            flex-grow: 1;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            padding: 12px 20px;
-            color: var(--sidebar-text);
-            text-decoration: none;
-            transition: background-color 0.3s;
-        }
-
-        .nav-item:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .nav-item.disabled {
-            color: #607d8b;
-            pointer-events: none;
-        }
-
-        .nav-icon {
-            margin-right: 12px;
-            font-size: 18px;
-        }
-
         /* Main Content */
         .main-content {
             flex: 1;
-            margin-left: 220px;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
@@ -228,27 +185,6 @@
     </style>
 </head>
 <body>
-    <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="user-profile">
-            <div class="user-avatar">User Avatar</div>
-            <div class="user-name">User</div>
-            <div class="user-role">Role</div>
-        </div>
-        <nav>
-            <ul class="nav-menu">
-                <li><a href="#" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a></li>
-                <li><a href="#" class="nav-item"><span class="nav-icon">☑️</span> Check-ins</a></li>
-                <li><a href="#" class="nav-item"><span class="nav-icon">🎯</span> Goals</a></li>
-                <li><a href="#" class="nav-item"><span class="nav-icon">💬</span> Support</a></li>
-                <li><a href="#" class="nav-item disabled"><span class="nav-icon">📋</span> Assessment</a></li>
-                <li><a href="#" class="nav-item"><span class="nav-icon">📈</span> Analytics</a></li>
-                <li><a href="#" class="nav-item"><span class="nav-icon">▶️</span> Onboarding</a></li>
-                <li><a href="#" class="nav-item"><span class="nav-icon">🚪</span> Login</a></li>
-            </ul>
-        </nav>
-    </aside>
-
     <!-- Main Content -->
     <main class="main-content">
         <header class="header">
@@ -291,8 +227,14 @@
     </main>
 
     <script>
+        (function() {
+            if (localStorage.getItem('sa_theme') === 'dark') {
+                document.body.classList.add('dark-theme');
+            }
+        })();
         function toggleTheme() {
             document.body.classList.toggle('dark-theme');
+            localStorage.setItem('sa_theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
         }
     </script>
 </body>

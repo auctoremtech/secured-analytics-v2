@@ -84,6 +84,7 @@
         .nav-row {
             display: flex;
             justify-content: flex-end;
+            gap: 12px;
             margin-top: 28px;
         }
         .btn {
@@ -103,66 +104,171 @@
             background: #b0bec5;
             cursor: not-allowed;
         }
+        .btn-save {
+            background: #546e7a;
+        }
+        .btn-save:hover {
+            background: #607d8b;
+        }
+        .btn-previous {
+            background: #78909c;
+        }
+        .btn-previous:hover {
+            background: #90a4ae;
+        }
+        .review-banner {
+            background: #edf6fd;
+            border: 1px solid #bfd5e8;
+            border-radius: 6px;
+            padding: 14px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .review-banner .banner-icon {
+            font-size: 22px;
+        }
+        .review-banner .banner-text {
+            font-size: 15px;
+            color: #0d3a60;
+        }
+
+        /* Theme toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 12px;
+            right: 16px;
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            z-index: 100;
+        }
+        .theme-toggle:hover { background-color: #f0f0f0; }
+        .theme-icon { margin-right: 8px; }
+
+        /* Dark theme */
+        .dark-theme { background: #1e2a35; color: #e0e6ed; }
+        .dark-theme .container {
+            background: #263240;
+            border-color: #3a4a5a;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+        }
+        .dark-theme h1 { color: #e0e6ed; }
+        .dark-theme .page-info { color: #8899a6; }
+        .dark-theme .question-card {
+            background: #1e2d3a;
+            border-color: #3a4a5a;
+        }
+        .dark-theme .question-text { color: #e0e6ed; }
+        .dark-theme .question-number { color: #80b0d0; }
+        .dark-theme .likert-option label { color: #b0bec5; }
+        .dark-theme .btn-save { background: #3a4a5a; }
+        .dark-theme .btn-save:hover { background: #4a5a6a; }
+        .dark-theme .btn-previous { background: #3a4a5a; }
+        .dark-theme .btn-previous:hover { background: #4a5a6a; }
+        .dark-theme .btn:disabled, .dark-theme .btn.disabled { background: #3a4a5a; color: #8899a6; }
+        .dark-theme .review-banner {
+            background: #1e2d3a;
+            border-color: #3a4a5a;
+        }
+        .dark-theme .review-banner .banner-text { color: #80b0d0; }
+        .dark-theme .theme-toggle {
+            background-color: #2d3a47;
+            color: #e0e6ed;
+            border-color: #4a5a6a;
+        }
+        .dark-theme .theme-toggle:hover { background-color: #3a4a5a; }
     </style>
 </head>
 <body>
+    <button class="theme-toggle" onclick="toggleTheme()">
+        <span class="theme-icon">🌙</span> Toggle Theme
+    </button>
     <div class="container">
         <div class="header-row">
-            <h1>Assessment</h1>
+            <h1>{% if reviewing %}Review Your Answers{% else %}Assessment{% endif %}</h1>
             <span class="page-info">Page {{ page_number }} of {{ total_pages }}</span>
         </div>
+
+        {% if reviewing %}
+        <div class="review-banner">
+            <span class="banner-icon">🔍</span>
+            <span class="banner-text">You are reviewing your answers. You may change any response before submitting.</span>
+        </div>
+        {% endif %}
 
         <form method="post" action="{% url 'survey' %}" id="surveyForm">
             {% csrf_token %}
 
-            {% for q in questions %}
+            {% for item in question_items %}
             <div class="question-card">
                 <p class="question-text">
-                    <span class="question-number">{{ forloop.counter|add:start_number }}.</span> {{ q.text }}
+                    <span class="question-number">{{ forloop.counter|add:start_number }}.</span> {{ item.question.text }}
                 </p>
                 <div class="likert-row">
-                    {% with qname="q_"|add:q.pk|stringformat:"s" %}
                     <div class="likert-option">
-                        <input type="radio" id="q{{ q.pk }}_ha" name="q_{{ q.pk }}" value="5" required>
-                        <label for="q{{ q.pk }}_ha">Highly Agree</label>
+                        <input type="radio" id="{{ item.resp_key }}_ha" name="{{ item.resp_key }}" value="5" {% if item.saved_value == "5" %}checked{% endif %} required>
+                        <label for="{{ item.resp_key }}_ha">Highly Agree</label>
                     </div>
                     <div class="likert-option">
-                        <input type="radio" id="q{{ q.pk }}_a" name="q_{{ q.pk }}" value="4">
-                        <label for="q{{ q.pk }}_a">Agree</label>
+                        <input type="radio" id="{{ item.resp_key }}_a" name="{{ item.resp_key }}" value="4" {% if item.saved_value == "4" %}checked{% endif %}>
+                        <label for="{{ item.resp_key }}_a">Agree</label>
                     </div>
                     <div class="likert-option">
-                        <input type="radio" id="q{{ q.pk }}_n" name="q_{{ q.pk }}" value="3">
-                        <label for="q{{ q.pk }}_n">Neutral</label>
+                        <input type="radio" id="{{ item.resp_key }}_n" name="{{ item.resp_key }}" value="3" {% if item.saved_value == "3" %}checked{% endif %}>
+                        <label for="{{ item.resp_key }}_n">Neutral</label>
                     </div>
                     <div class="likert-option">
-                        <input type="radio" id="q{{ q.pk }}_d" name="q_{{ q.pk }}" value="2">
-                        <label for="q{{ q.pk }}_d">Disagree</label>
+                        <input type="radio" id="{{ item.resp_key }}_d" name="{{ item.resp_key }}" value="2" {% if item.saved_value == "2" %}checked{% endif %}>
+                        <label for="{{ item.resp_key }}_d">Disagree</label>
                     </div>
                     <div class="likert-option">
-                        <input type="radio" id="q{{ q.pk }}_hd" name="q_{{ q.pk }}" value="1">
-                        <label for="q{{ q.pk }}_hd">Highly Disagree</label>
+                        <input type="radio" id="{{ item.resp_key }}_hd" name="{{ item.resp_key }}" value="1" {% if item.saved_value == "1" %}checked{% endif %}>
+                        <label for="{{ item.resp_key }}_hd">Highly Disagree</label>
                     </div>
-                    {% endwith %}
                 </div>
             </div>
             {% endfor %}
 
             <div class="nav-row">
+                {% if show_previous %}
+                <button type="submit" name="action" value="previous" class="btn btn-previous" formnovalidate>Previous</button>
+                {% endif %}
+                {% if not reviewing %}
+                <button type="submit" name="action" value="save" class="btn btn-save" formnovalidate>Save &amp; Resume Later</button>
+                {% endif %}
                 {% if is_last %}
-                <button type="submit" class="btn" id="submitBtn">Done</button>
+                <button type="submit" name="action" value="next" class="btn" id="submitBtn">{% if reviewing %}Return to Summary{% else %}Done{% endif %}</button>
                 {% else %}
-                <button type="submit" class="btn" id="submitBtn">Next</button>
+                <button type="submit" name="action" value="next" class="btn" id="submitBtn">Next</button>
                 {% endif %}
             </div>
         </form>
     </div>
 
     <script>
-        // Enable the button only when all questions on the page are answered
+        (function() {
+            if (localStorage.getItem('sa_theme') === 'dark') {
+                document.body.classList.add('dark-theme');
+            }
+        })();
+        function toggleTheme() {
+            document.body.classList.toggle('dark-theme');
+            localStorage.setItem('sa_theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
+        }
+
+        // Enable Next/Done only when all questions on the page are answered.
+        // Save & Resume Later is always clickable (uses formnovalidate).
         (function () {
             var form = document.getElementById("surveyForm");
             var btn = document.getElementById("submitBtn");
-            var totalQuestions = {{ questions|length }};
+            var totalQuestions = {{ question_items|length }};
 
             function countAnswered() {
                 var names = {};
@@ -177,6 +283,7 @@
             }
 
             btn.disabled = true;
+            update();   // check on load for pre-filled (resumed) responses
             form.addEventListener("change", update);
         })();
     </script>

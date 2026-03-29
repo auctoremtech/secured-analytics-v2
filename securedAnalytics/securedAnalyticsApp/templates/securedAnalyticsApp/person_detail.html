@@ -14,10 +14,48 @@
         .btn:hover { background-color: #45a049; }
         .btn-edit { background-color: #2196F3; }
         .btn-edit:hover { background-color: #0b7dda; }
+
+        /* Theme toggle */
+        .theme-toggle {
+            float: right;
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 16px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .theme-toggle:hover { background-color: #f0f0f0; }
+        .theme-icon { margin-right: 8px; }
+
+        /* Dark theme */
+        .dark-theme { background: #1e2a35; color: #e0e6ed; }
+        .dark-theme h1 { color: #e0e6ed; }
+        .dark-theme .detail {
+            background-color: #263240;
+            border-color: #3a4a5a;
+        }
+        .dark-theme .label { color: #c8d6e0; }
+        .dark-theme .value { color: #b0bec5; }
+        .dark-theme a { color: #4fc3f7; }
+        .dark-theme p { color: #b0bec5; }
+        .dark-theme .theme-toggle {
+            background-color: #2d3a47;
+            color: #e0e6ed;
+            border-color: #4a5a6a;
+        }
+        .dark-theme .theme-toggle:hover { background-color: #3a4a5a; }
     </style>
 </head>
 <body>
-    <h1>Person Detail</h1>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1>Person Detail</h1>
+        <button class="theme-toggle" onclick="toggleTheme()">
+            <span class="theme-icon">🌙</span> Toggle Theme
+        </button>
+    </div>
     
     <div class="detail">
         <div class="field">
@@ -88,5 +126,17 @@
         <a href="{% url 'person_list' %}" class="btn">Back to List</a>
         <a href="{% url 'person_update' person.pk %}" class="btn btn-edit">Edit</a>
     </div>
+
+    <script>
+        (function() {
+            if (localStorage.getItem('sa_theme') === 'dark') {
+                document.body.classList.add('dark-theme');
+            }
+        })();
+        function toggleTheme() {
+            document.body.classList.toggle('dark-theme');
+            localStorage.setItem('sa_theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
+        }
+    </script>
 </body>
 </html>

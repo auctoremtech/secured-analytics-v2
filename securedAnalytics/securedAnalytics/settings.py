@@ -62,6 +62,7 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
+        "CONN_MAX_AGE": 600,
     }
 }
 
@@ -97,7 +98,7 @@ CSRF_COOKIE_SAMESITE = "Lax"
 
 # Session expires after 30 minutes of inactivity
 SESSION_COOKIE_AGE = 1800
-SESSION_SAVE_EVERY_REQUEST = True
+SESSION_SAVE_EVERY_REQUEST = False
 
 LOGIN_URL = "login"
 

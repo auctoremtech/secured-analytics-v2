@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.db.models import Max
 
 from securedAnalyticsApp.models import (
     SLEQuestion, MERQuestion, OWBQuestion, PSWQuestion, OCLQuestion,
@@ -41,7 +42,7 @@ class BaseQuestionAdmin(admin.ModelAdmin):
     def get_changeform_initial_data(self, request):
         initial = super().get_changeform_initial_data(request)
         if "number" not in initial:
-            max_num = self.model.objects.order_by("-number").values_list("number", flat=True).first()
+            max_num = self.model.objects.aggregate(m=Max("number"))["m"]
             initial["number"] = (max_num or 0) + 1
         return initial
 

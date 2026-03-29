@@ -72,9 +72,9 @@ US_STATES_CHOICES = [
 
 
 class DemographicsForm(forms.ModelForm):
-    first_name = forms.CharField(max_length=150, required=False)
+    first_name = forms.CharField(max_length=150)
     middle_name = forms.CharField(max_length=150, required=False)
-    last_name = forms.CharField(max_length=150, required=False)
+    last_name = forms.CharField(max_length=150)
     NAME_SUFFIX_CHOICES = [
         ("", "— None —"),
         ("Jr.", "Jr."),
@@ -94,7 +94,12 @@ class DemographicsForm(forms.ModelForm):
     ]
 
     name_suffix = forms.ChoiceField(choices=NAME_SUFFIX_CHOICES, required=False)
-    state = forms.ChoiceField(choices=US_STATES_CHOICES, required=False)
+    state = forms.ChoiceField(choices=US_STATES_CHOICES)
+
+    REQUIRED_DEMOGRAPHICS_FIELDS = (
+        "phone_number", "address", "city", "state", "zip_code",
+        "date_of_birth", "ethnicity", "gender", "rank", "years_of_service",
+    )
 
     class Meta:
         model = Person
@@ -118,6 +123,11 @@ class DemographicsForm(forms.ModelForm):
     def __init__(self, *args, user=None, **kwargs):
         self.user = user
         super().__init__(*args, **kwargs)
+
+        # Mark model-level fields as required in the form
+        for field_name in self.REQUIRED_DEMOGRAPHICS_FIELDS:
+            if field_name in self.fields:
+                self.fields[field_name].required = True
 
         source_user = self.user
         if source_user is None and self.instance and self.instance.pk:
