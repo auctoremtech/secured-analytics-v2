@@ -1,34 +1,22 @@
+import os
 import random
 from datetime import timedelta
 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.db.models import Max
 from django.shortcuts import render, redirect
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, TemplateView, View
 from django.urls import reverse_lazy
 from django.utils import timezone
 from .forms import DemographicsForm
-from .models import Person, Users, SurveyProgress
+from .models import Person, Users, SurveyProgress, AssessmentResult
+from .grading import organize_survey_results, LIKERT_LABELS as _LIKERT_LABELS_INT
 
 from assessments.bulk_load import ASSESSMENT_REGISTRY
 
 
 _REQUIRED_DEMOGRAPHICS_FIELDS = DemographicsForm.REQUIRED_DEMOGRAPHICS_FIELDS
-
-
-def _demographics_complete(user):
-    """Return True only if the user has a Person record with all required fields."""
-    try:
-        person = Person.objects.select_related("user").get(user=user)
-    except Person.DoesNotExist:
-        return False
-    for field in _REQUIRED_DEMOGRAPHICS_FIELDS:
-        if not getattr(person, field, None):
-            return False
-    user_obj = person.user
-    if not user_obj.first_name or not user_obj.last_name:
-        return False
-    return True
 
 
 def _batch_fetch_questions(pool_slice):
@@ -56,16 +44,54 @@ class DemographicsRequiredMixin:
     """Redirect to demographics if the user hasn't completed them."""
 
     def dispatch(self, request, *args, **kwargs):
-        if request.user.is_authenticated and not _demographics_complete(request.user):
-            return redirect("demographics")
+        if request.user.is_authenticated:
+            person = Person.objects.filter(user=request.user).first()
+            if person is None:
+                return redirect("demographics")
+            # Cache for UserRoleMixin to avoid duplicate Person queries
+            self._cached_person = person
+            for field in _REQUIRED_DEMOGRAPHICS_FIELDS:
+                if not getattr(person, field, None):
+                    return redirect("demographics")
+            if not request.user.first_name or not request.user.last_name:
+                return redirect("demographics")
         return super().dispatch(request, *args, **kwargs)
 
 
 class UserRoleMixin:
-    """Add user_role to template context."""
+    """Add user_role and profile image info to template context."""
+
+    def _get_person(self):
+        """Return the Person for the current user, cached on the view instance."""
+        if not hasattr(self, "_cached_person"):
+            self._cached_person = Person.objects.filter(
+                user=self.request.user,
+            ).first()
+        return self._cached_person
 
     def get_user_role(self):
+        person = self._get_person()
+        if person and person.rank:
+            return person.get_rank_display()
         return "Staff" if self.request.user.is_staff else "Member"
+
+    def get_user_profile_context(self):
+        """Return dict with profile_photo_url and avatar_url keys."""
+        ctx = {"profile_photo_url": "", "avatar_url": ""}
+        person = self._get_person()
+        if person:
+            if person.profile_photo:
+                ctx["profile_photo_url"] = person.profile_photo.url
+            elif person.avatar:
+                from django.templatetags.static import static
+                ctx["avatar_url"] = static(f"securedAnalyticsApp/avatars/{person.avatar}")
+        return ctx
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["user_role"] = self.get_user_role()
+        context.update(self.get_user_profile_context())
+        return context
 
 
 class LoginPageView(TemplateView):
@@ -113,17 +139,10 @@ class LoginPageView(TemplateView):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            # Single query to determine redirect: completed → dashboard,
-            # in_progress → survey, otherwise → welcome
-            latest_status = (
-                SurveyProgress.objects
-                .filter(user=user)
-                .values_list("status", flat=True)
-            )
-            status_set = set(latest_status)
-            if "completed" in status_set:
+            # exists() short-circuits with LIMIT 1 — faster than fetching all rows
+            if SurveyProgress.objects.filter(user=user, status="completed").exists():
                 return redirect("dashboard")
-            if "in_progress" in status_set:
+            if SurveyProgress.objects.filter(user=user, status="in_progress").exists():
                 return redirect("survey")
             return redirect("welcome")
         else:
@@ -155,15 +174,29 @@ class DemographicsView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy("demographics_saved")
 
     def get(self, request, *args, **kwargs):
-        # Clear any previous demographics so the form starts blank
-        Person.objects.filter(user=request.user).delete()
-        user = request.user
-        if user.first_name or user.last_name or getattr(user, "middle_name", "") or getattr(user, "name_suffix", ""):
-            user.first_name = ""
-            user.last_name = ""
-            user.middle_name = ""
-            user.name_suffix = ""
-            user.save(update_fields=["first_name", "last_name", "middle_name", "name_suffix"])
+        # Only clear if demographics are incomplete (avoids wiping on accidental visit)
+        existing = Person.objects.filter(user=request.user).first()
+        needs_reset = False
+        if existing is None:
+            needs_reset = True
+        else:
+            for field in _REQUIRED_DEMOGRAPHICS_FIELDS:
+                if not getattr(existing, field, None):
+                    needs_reset = True
+                    break
+            if not request.user.first_name or not request.user.last_name:
+                needs_reset = True
+        if needs_reset and existing:
+            existing.delete()
+            user = request.user
+            if user.first_name or user.last_name or getattr(user, "middle_name", "") or getattr(user, "name_suffix", ""):
+                user.first_name = ""
+                user.last_name = ""
+                user.middle_name = ""
+                user.name_suffix = ""
+                user.save(update_fields=["first_name", "last_name", "middle_name", "name_suffix"])
+        elif not needs_reset:
+            return redirect("demographics_saved")
         return super().get(request, *args, **kwargs)
 
     def get_form_kwargs(self):
@@ -172,20 +205,15 @@ class DemographicsView(LoginRequiredMixin, CreateView):
         return kwargs
 
 
-class DemographicsSavedView(LoginRequiredMixin, TemplateView):
+class DemographicsSavedView(LoginRequiredMixin, DemographicsRequiredMixin, TemplateView):
     """Confirmation page shown after demographics are saved."""
 
     login_url = "login"
     template_name = "securedAnalyticsApp/demographics_saved.html"
 
-    def get(self, request, *args, **kwargs):
-        if not _demographics_complete(request.user):
-            return redirect("demographics")
-        return super().get(request, *args, **kwargs)
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["person"] = Person.objects.filter(user=self.request.user).first()
+        context["person"] = self._cached_person
         return context
 
 
@@ -270,8 +298,16 @@ class SurveyView(LoginRequiredMixin, DemographicsRequiredMixin, View):
                     .objects.values_list("pk", flat=True)
             ]
             random.shuffle(pool)
+            anon_id = ""
+            try:
+                anon_id = Person.objects.values_list(
+                    "anonymous_id", flat=True,
+                ).get(user=request.user)
+            except Person.DoesNotExist:
+                pass
             progress = SurveyProgress.objects.create(
                 user=request.user,
+                anonymous_id=anon_id,
                 question_pool=pool,
                 current_page=0,
             )
@@ -359,6 +395,28 @@ class SurveyView(LoginRequiredMixin, DemographicsRequiredMixin, View):
             progress.save(update_fields=["responses", "current_page", "updated_at"])
             return redirect("survey")
 
+        # Server-side validation: all questions on the page must be answered
+        page_slice = self._current_page_slice(progress)
+        responses = progress.responses or {}
+        unanswered = [f"{k}_{pk}" for k, pk in page_slice if f"{k}_{pk}" not in responses]
+        if unanswered:
+            progress.save(update_fields=["responses", "updated_at"])
+            question_items, is_last = self._page_items(progress)
+            total = len(progress.question_pool)
+            total_pages = (total + QUESTIONS_PER_PAGE - 1) // QUESTIONS_PER_PAGE
+            reviewing = request.session.get("survey_reviewing", False)
+            return render(request, "securedAnalyticsApp/survey.html", {
+                "question_items": question_items,
+                "is_last": is_last,
+                "page_number": progress.current_page + 1,
+                "total_pages": total_pages,
+                "start_number": progress.current_page * QUESTIONS_PER_PAGE,
+                "reviewing": reviewing,
+                "show_previous": reviewing and progress.current_page > 0,
+                "unanswered_keys": unanswered,
+                "validation_error": True,
+            })
+
         # action == "next" or "done" — advance page
         progress.current_page += 1
         progress.save(update_fields=["responses", "current_page", "updated_at"])
@@ -396,21 +454,19 @@ class SurveyDoneView(LoginRequiredMixin, DemographicsRequiredMixin, View):
 
         if action == "submit":
             request.session.pop("survey_reviewing", None)
-            return redirect("survey_submit")
+            # Process submission inline (POST-only state mutation)
+            in_progress = list(SurveyProgress.objects.filter(
+                user=request.user, status="in_progress",
+            ))
+            for sp in in_progress:
+                organize_survey_results(sp)
+            if in_progress:
+                SurveyProgress.objects.filter(
+                    pk__in=[sp.pk for sp in in_progress],
+                ).update(status="completed", updated_at=timezone.now())
+            return render(request, "securedAnalyticsApp/survey_submit.html")
 
         return redirect("survey_done")
-
-
-class SurveySubmitView(LoginRequiredMixin, DemographicsRequiredMixin, View):
-    """Marks the survey as completed and shows a dashboard-ready confirmation."""
-
-    login_url = "login"
-
-    def get(self, request):
-        SurveyProgress.objects.filter(
-            user=request.user, status="in_progress",
-        ).update(status="completed")
-        return render(request, "securedAnalyticsApp/survey_submit.html")
 
 
 class SurveySavedView(LoginRequiredMixin, DemographicsRequiredMixin, TemplateView):
@@ -432,19 +488,8 @@ class DashboardView(LoginRequiredMixin, UserRoleMixin, TemplateView):
                 return redirect("welcome")
         return super().dispatch(request, *args, **kwargs)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["user_role"] = self.get_user_role()
-        return context
 
-
-LIKERT_LABELS = {
-    "5": "Highly Agree",
-    "4": "Agree",
-    "3": "Neutral",
-    "2": "Disagree",
-    "1": "Highly Disagree",
-}
+LIKERT_LABELS = {str(k): v for k, v in _LIKERT_LABELS_INT.items()}
 
 
 class AssessmentHistoryView(LoginRequiredMixin, UserRoleMixin, View):
@@ -474,6 +519,7 @@ class AssessmentHistoryView(LoginRequiredMixin, UserRoleMixin, View):
         return render(request, "securedAnalyticsApp/assessment_history.html", {
             "assessments": assessments,
             "user_role": self.get_user_role(),
+            **self.get_user_profile_context(),
         })
 
 
@@ -515,4 +561,150 @@ class AssessmentReviewView(LoginRequiredMixin, UserRoleMixin, View):
             "progress": progress,
             "items": items,
             "user_role": self.get_user_role(),
+            **self.get_user_profile_context(),
         })
+
+
+class ProfilePhotoView(LoginRequiredMixin, View):
+    """Allow user to upload a photo or select a preset avatar."""
+
+    login_url = "login"
+
+    def get(self, request):
+        person = Person.objects.filter(user=request.user).first()
+        return render(request, "securedAnalyticsApp/profile_photo.html", {
+            "person": person,
+            "avatar_choices": Person.AVATAR_CHOICES[1:],  # skip blank
+        })
+
+    # 5 MB max upload size
+    MAX_UPLOAD_BYTES = 5 * 1024 * 1024
+    ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+    ALLOWED_CONTENT_TYPES = {
+        "image/jpeg", "image/png", "image/gif", "image/webp",
+    }
+
+    def post(self, request):
+        person = Person.objects.filter(user=request.user).first()
+        if not person:
+            return redirect("dashboard")
+
+        action = request.POST.get("action", "")
+
+        if action == "upload" and request.FILES.get("photo"):
+            photo = request.FILES["photo"]
+            # Validate file size
+            if photo.size > self.MAX_UPLOAD_BYTES:
+                return render(request, "securedAnalyticsApp/profile_photo.html", {
+                    "person": person,
+                    "avatar_choices": Person.AVATAR_CHOICES[1:],
+                    "error": "File too large. Maximum size is 5 MB.",
+                })
+            # Validate file extension
+            ext = os.path.splitext(photo.name)[1].lower()
+            if ext not in self.ALLOWED_EXTENSIONS:
+                return render(request, "securedAnalyticsApp/profile_photo.html", {
+                    "person": person,
+                    "avatar_choices": Person.AVATAR_CHOICES[1:],
+                    "error": "Invalid file type. Allowed: JPG, PNG, GIF, WebP.",
+                })
+            # Validate content type
+            if photo.content_type not in self.ALLOWED_CONTENT_TYPES:
+                return render(request, "securedAnalyticsApp/profile_photo.html", {
+                    "person": person,
+                    "avatar_choices": Person.AVATAR_CHOICES[1:],
+                    "error": "Invalid file type. Allowed: JPG, PNG, GIF, WebP.",
+                })
+            # Clear any selected avatar when uploading a photo
+            person.avatar = ""
+            person.profile_photo = photo
+            person.save(update_fields=["profile_photo", "avatar", "updated_at"])
+        elif action == "avatar":
+            avatar_value = request.POST.get("avatar", "")
+            valid_avatars = [c[0] for c in Person.AVATAR_CHOICES]
+            if avatar_value in valid_avatars:
+                # Clear uploaded photo when selecting an avatar
+                if person.profile_photo:
+                    person.profile_photo.delete(save=False)
+                person.avatar = avatar_value
+                person.save(update_fields=["profile_photo", "avatar", "updated_at"])
+        elif action == "remove":
+            if person.profile_photo:
+                person.profile_photo.delete(save=False)
+            person.avatar = ""
+            person.save(update_fields=["profile_photo", "avatar", "updated_at"])
+
+        return redirect("profile_photo")
+
+
+class AnalyticsView(LoginRequiredMixin, DemographicsRequiredMixin, UserRoleMixin, TemplateView):
+    """Analytics page with chart type selection."""
+
+    login_url = "login"
+    template_name = "securedAnalyticsApp/analytics.html"
+
+
+VALID_CHART_TYPES = {"pie", "bar", "line", "funnel"}
+CHART_TITLES = {
+    "pie": "Pie Chart",
+    "bar": "Bar Chart",
+    "line": "Line Chart",
+    "funnel": "Funnel Chart",
+}
+
+
+class AnalyticsChartView(LoginRequiredMixin, DemographicsRequiredMixin, UserRoleMixin, TemplateView):
+    """Render a specific chart type using assessment data."""
+
+    login_url = "login"
+    template_name = "securedAnalyticsApp/analytics_chart.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        chart_type = self.kwargs.get("chart_type", "pie")
+        if chart_type not in VALID_CHART_TYPES:
+            chart_type = "pie"
+
+        context["chart_type"] = chart_type
+        context["chart_title"] = CHART_TITLES.get(chart_type, "Chart")
+
+        # Fetch the user's most recent AssessmentResult per assessment_key
+        # Subquery gets the latest id per key; outer query fetches only those rows
+        latest_ids = (
+            AssessmentResult.objects
+            .filter(survey_progress__user=self.request.user)
+            .values("assessment_key")
+            .annotate(latest_id=Max("id"))
+            .values_list("latest_id", flat=True)
+        )
+        latest = list(
+            AssessmentResult.objects
+            .filter(id__in=latest_ids)
+            .order_by("assessment_key")
+        )
+
+        labels = []
+        scores = []
+        category_data = []
+        for r in latest:
+            labels.append(r.assessment_label or r.assessment_key)
+            scores.append(float(r.score) if r.score else 0)
+            cats = []
+            if r.results_data and "categories" in r.results_data:
+                for cat in r.results_data["categories"]:
+                    cats.append({
+                        "title": f"{cat.get('numeral', '')}. {cat.get('title', '')}",
+                        "score": cat.get("score", 0),
+                    })
+            category_data.append({
+                "assessment": r.assessment_label or r.assessment_key,
+                "categories": cats,
+            })
+
+        context["chart_data"] = {
+            "labels": labels,
+            "scores": scores,
+            "category_data": category_data,
+        }
+        context["has_data"] = len(latest) > 0
+        return context

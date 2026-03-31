@@ -173,29 +173,23 @@ class DemographicsForm(forms.ModelForm):
             "placeholder": "City name",
         })
 
-    def clean_first_name(self):
-        value = self.cleaned_data.get("first_name", "")
+    def _clean_name_field(self, field_name):
+        value = self.cleaned_data.get(field_name, "")
         if value and not NAME_RE.match(value):
+            label = field_name.replace("_", " ").title()
             raise forms.ValidationError(
-                "First name may only contain letters, spaces, hyphens, apostrophes, and periods."
+                f"{label} may only contain letters, spaces, hyphens, apostrophes, and periods."
             )
         return value
+
+    def clean_first_name(self):
+        return self._clean_name_field("first_name")
 
     def clean_middle_name(self):
-        value = self.cleaned_data.get("middle_name", "")
-        if value and not NAME_RE.match(value):
-            raise forms.ValidationError(
-                "Middle name may only contain letters, spaces, hyphens, apostrophes, and periods."
-            )
-        return value
+        return self._clean_name_field("middle_name")
 
     def clean_last_name(self):
-        value = self.cleaned_data.get("last_name", "")
-        if value and not NAME_RE.match(value):
-            raise forms.ValidationError(
-                "Last name may only contain letters, spaces, hyphens, apostrophes, and periods."
-            )
-        return value
+        return self._clean_name_field("last_name")
 
     def clean_phone_number(self):
         value = self.cleaned_data.get("phone_number", "")

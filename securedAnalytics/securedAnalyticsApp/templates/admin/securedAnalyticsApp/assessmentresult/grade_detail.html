@@ -1,0 +1,88 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+    &rsaquo; <a href="{% url 'admin:securedAnalyticsApp_assessmentresult_changelist' %}">Assessment Results</a>
+    &rsaquo; {{ title }}
+  </div>
+{% endblock %}
+
+{% block content %}
+<style>
+    .grade-header { margin-bottom: 1.5em; }
+    .grade-header h2 { margin: 0 0 .3em; }
+    .grade-header .meta { color: #666; font-size: .9em; }
+    .grade-summary { background: #f8f8f8; border: 1px solid #ddd; border-radius: 6px; padding: 1em 1.5em; margin-bottom: 2em; display: inline-block; }
+    .grade-summary .total { font-size: 1.6em; font-weight: bold; color: #417690; }
+    .category-section { margin-bottom: 2em; border: 1px solid #ddd; border-radius: 6px; overflow: hidden; }
+    .category-header { background: #417690; color: #fff; padding: .7em 1em; display: flex; justify-content: space-between; align-items: center; }
+    .category-header h3 { margin: 0; font-size: 1.05em; }
+    .category-header .cat-score { font-weight: bold; font-size: 1.05em; }
+    table.question-table { width: 100%; border-collapse: collapse; }
+    table.question-table th { background: #f0f0f0; text-align: left; padding: .5em .8em; border-bottom: 2px solid #ddd; font-size: .85em; }
+    table.question-table td { padding: .5em .8em; border-bottom: 1px solid #eee; vertical-align: top; }
+    table.question-table tr:last-child td { border-bottom: none; }
+    .answer-val { font-weight: bold; text-align: center; }
+    .answer-5 { color: #2e7d32; }
+    .answer-4 { color: #558b2f; }
+    .answer-3 { color: #f9a825; }
+    .answer-2 { color: #e65100; }
+    .answer-1 { color: #c62828; }
+    .answer-na { color: #999; }
+</style>
+
+<div class="grade-header">
+    <h2>{{ result.assessment_label }}</h2>
+    <p class="meta">
+        <strong>User:</strong> {{ assessed_user.get_full_name }} ({{ assessed_user.username }})<br>
+        <strong>Anonymous ID:</strong> {{ result.anonymous_id|default:"N/A" }}<br>
+        <strong>Graded:</strong> {{ result.graded_at|date:"N j, Y g:i A" }}<br>
+        <strong>Completed:</strong> {{ result.survey_progress.updated_at|date:"N j, Y g:i A" }}
+    </p>
+</div>
+
+<div class="grade-summary">
+    <span class="total">Total Score: {{ result.score }}</span>
+</div>
+
+{% for cat in categories %}
+<div class="category-section">
+    <div class="category-header">
+        <h3>{{ cat.numeral }}. {{ cat.title }}{% if cat.description %} <span style="font-weight:normal; font-size:.85em;">({{ cat.description }})</span>{% endif %}</h3>
+        <span class="cat-score">Category Score: {{ cat.score }}</span>
+    </div>
+    <table class="question-table">
+        <thead>
+            <tr>
+                <th style="width:5%">#</th>
+                <th>Question</th>
+                <th style="width:8%; text-align:center">Value</th>
+                <th style="width:15%">Response</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for q in cat.questions %}
+            <tr>
+                <td>{{ q.number }}</td>
+                <td>{{ q.text }}</td>
+                <td class="answer-val {% if q.answer == 5 %}answer-5{% elif q.answer == 4 %}answer-4{% elif q.answer == 3 %}answer-3{% elif q.answer == 2 %}answer-2{% elif q.answer == 1 %}answer-1{% else %}answer-na{% endif %}">
+                    {% if q.answer != None %}{{ q.answer }}{% else %}&mdash;{% endif %}
+                </td>
+                <td>{{ q.answer_label }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% empty %}
+<p>No graded data available for this assessment.</p>
+{% endfor %}
+
+<div style="margin-top: 2em;">
+    <a href="{% url 'admin:securedAnalyticsApp_assessmentresult_changelist' %}" class="button">&laquo; Back to Assessment Results</a>
+</div>
+{% endblock %}

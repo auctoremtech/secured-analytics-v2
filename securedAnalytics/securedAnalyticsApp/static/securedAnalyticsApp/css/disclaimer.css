@@ -1,0 +1,208 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --main-bg: #f5f5f5;
+    --footer-bg: #37474f;
+    --footer-text: #b0bec5;
+    --primary-btn: #26a69a;
+    --primary-btn-hover: #2bbbad;
+    --danger-btn: #e74c3c;
+    --danger-btn-hover: #c0392b;
+    --link-color: #26a69a;
+}
+
+.dark-theme {
+    --main-bg: #1e2a35;
+    --footer-bg: #1a2634;
+    --footer-text: #8899a6;
+}
+
+.dark-theme .theme-toggle {
+    background-color: #2d3a47;
+    color: #e0e6ed;
+    border-color: #4a5a6a;
+}
+.dark-theme .theme-toggle:hover { background-color: #3a4a5a; }
+.dark-theme .disclaimer-container {
+    background-color: #263240;
+}
+.dark-theme .disclaimer-title { color: #e0e6ed; }
+.dark-theme .disclaimer-subtitle { color: #b0bec5; }
+.dark-theme .disclaimer-content {
+    background-color: #1e2a35;
+    border-color: #3a4a5a;
+}
+.dark-theme .disclaimer-section h3 { color: #e0e6ed; }
+.dark-theme .disclaimer-section p { color: #b0bec5; }
+
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    min-height: 100vh;
+    background-color: var(--main-bg);
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    margin-left: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.header {
+    display: flex;
+    justify-content: flex-end;
+    padding: 10px 20px;
+    background-color: var(--main-bg);
+}
+
+.theme-toggle {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.theme-toggle:hover {
+    background-color: #f0f0f0;
+}
+
+.theme-icon {
+    margin-right: 8px;
+}
+
+.content-area {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 40px 20px;
+}
+
+/* Disclaimer Container */
+.disclaimer-container {
+    width: 100%;
+    max-width: 800px;
+    background-color: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.disclaimer-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.disclaimer-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+}
+
+.disclaimer-title {
+    font-size: 28px;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.disclaimer-subtitle {
+    font-size: 16px;
+    color: #666;
+}
+
+.disclaimer-content {
+    background-color: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 25px;
+    margin-bottom: 30px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.disclaimer-section {
+    margin-bottom: 20px;
+}
+
+.disclaimer-section:last-child {
+    margin-bottom: 0;
+}
+
+.disclaimer-section h3 {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.disclaimer-section p {
+    font-size: 14px;
+    color: #555;
+    line-height: 1.7;
+    text-align: justify;
+}
+
+.button-group {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 14px 40px;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.1s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn-accept {
+    background-color: var(--primary-btn);
+    color: white;
+}
+
+.btn-accept:hover {
+    background-color: var(--primary-btn-hover);
+}
+
+.btn-accept:disabled, .btn-accept.disabled {
+    background-color: #b0bec5;
+    cursor: not-allowed;
+    transform: none;
+    pointer-events: auto;
+}
+
+.btn-decline {
+    background-color: var(--danger-btn);
+    color: white;
+}
+
+.btn-decline:hover {
+    background-color: var(--danger-btn-hover);
+}
+
+/* Footer */
+.footer {
+    background-color: var(--footer-bg);
+    color: var(--footer-text);
+    text-align: center;
+    padding: 15px;
+    font-size: 14px;
+}

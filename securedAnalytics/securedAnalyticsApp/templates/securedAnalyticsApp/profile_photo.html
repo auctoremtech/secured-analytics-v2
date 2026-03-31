@@ -1,0 +1,245 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Photo - SECUREDAnalytics</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --main-bg: #f5f5f5;
+            --primary-btn: #26a69a;
+            --primary-btn-hover: #2bbbad;
+        }
+        .dark-theme { --main-bg: #1e2a35; }
+        body {
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            background: var(--main-bg);
+            color: #243447;
+        }
+        .container {
+            width: 92%;
+            max-width: 640px;
+            margin: 40px auto;
+            background: #ffffff;
+            border: 1px solid #dce3ea;
+            border-radius: 8px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+            padding: 32px;
+        }
+        h1 { font-size: 24px; color: #1a2634; margin-bottom: 8px; }
+        .subtitle { color: #607d8b; font-size: 14px; margin-bottom: 28px; }
+
+        /* Current Preview */
+        .current-preview {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .current-preview img {
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #26a69a;
+        }
+        .current-preview .placeholder {
+            font-size: 72px;
+            line-height: 1;
+        }
+        .current-label {
+            font-size: 13px;
+            color: #607d8b;
+            margin-top: 8px;
+        }
+
+        /* Sections */
+        .section { margin-bottom: 28px; }
+        .section h2 {
+            font-size: 16px;
+            color: #1a2634;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #e2e9f0;
+        }
+
+        /* Upload */
+        .upload-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .upload-area input[type="file"] { font-size: 14px; }
+        .btn {
+            border: none;
+            background: var(--primary-btn);
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .btn:hover { background: var(--primary-btn-hover); }
+        .btn-danger { background: #e74c3c; }
+        .btn-danger:hover { background: #c0392b; }
+        .btn-secondary { background: #546e7a; }
+        .btn-secondary:hover { background: #607d8b; }
+
+        /* Avatar grid */
+        .avatar-grid {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .avatar-option {
+            cursor: pointer;
+            border: 3px solid transparent;
+            border-radius: 50%;
+            padding: 4px;
+            transition: border-color 0.2s;
+        }
+        .avatar-option:hover { border-color: #b0bec5; }
+        .avatar-option.selected { border-color: #26a69a; }
+        .avatar-option img {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: block;
+        }
+
+        /* Actions row */
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        /* Theme toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 12px;
+            right: 16px;
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            z-index: 100;
+        }
+        .theme-toggle:hover { background-color: #f0f0f0; }
+        .theme-icon { margin-right: 8px; }
+
+        /* Dark theme */
+        .dark-theme .container {
+            background: #263240;
+            border-color: #3a4a5a;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.2);
+        }
+        .dark-theme h1, .dark-theme .section h2 { color: #e0e6ed; }
+        .dark-theme .subtitle, .dark-theme .current-label { color: #8899a6; }
+        .dark-theme body { color: #e0e6ed; }
+        .dark-theme .section h2 { border-color: #3a4a5a; }
+        .dark-theme .theme-toggle {
+            background-color: #2d3a47;
+            color: #e0e6ed;
+            border-color: #4a5a6a;
+        }
+        .dark-theme .theme-toggle:hover { background-color: #3a4a5a; }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" onclick="toggleTheme()">
+        <span class="theme-icon">🌙</span> Toggle Theme
+    </button>
+
+    <div class="container">
+        <h1>Profile Photo</h1>
+        <p class="subtitle">Upload a photo of yourself or choose an avatar</p>
+
+        <div class="current-preview">
+            {% if person.profile_photo %}
+                <img src="{{ person.profile_photo.url }}" alt="Current photo">
+                <div class="current-label">Current photo</div>
+            {% elif person.avatar %}
+                <img src="{% static 'securedAnalyticsApp/avatars/' %}{{ person.avatar }}" alt="Current avatar">
+                <div class="current-label">Current avatar: {{ person.get_avatar_display }}</div>
+            {% else %}
+                <div class="placeholder">👤</div>
+                <div class="current-label">No photo or avatar set</div>
+            {% endif %}
+        </div>
+
+        <!-- Upload Photo -->
+        <div class="section">
+            <h2>📷 Upload a Photo</h2>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="upload">
+                <div class="upload-area">
+                    <input type="file" name="photo" accept="image/*" required>
+                    <button type="submit" class="btn">Upload</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Select Avatar -->
+        <div class="section">
+            <h2>🎭 Choose an Avatar</h2>
+            <form method="post" id="avatarForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="avatar">
+                <input type="hidden" name="avatar" id="avatarValue" value="">
+                <div class="avatar-grid">
+                    {% for value, label in avatar_choices %}
+                    <div class="avatar-option {% if person.avatar == value %}selected{% endif %}"
+                         onclick="selectAvatar('{{ value }}', this)"
+                         title="{{ label }}">
+                        <img src="{% static 'securedAnalyticsApp/avatars/' %}{{ value }}" alt="{{ label }}">
+                    </div>
+                    {% endfor %}
+                </div>
+                <div style="margin-top: 12px;">
+                    <button type="submit" class="btn" id="avatarBtn" disabled>Use Selected Avatar</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Actions -->
+        <div class="actions">
+            {% if person.profile_photo or person.avatar %}
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="remove">
+                <button type="submit" class="btn btn-danger">Remove Photo/Avatar</button>
+            </form>
+            {% endif %}
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            if (localStorage.getItem('sa_theme') === 'dark') {
+                document.body.classList.add('dark-theme');
+            }
+        })();
+        function toggleTheme() {
+            document.body.classList.toggle('dark-theme');
+            localStorage.setItem('sa_theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
+        }
+
+        function selectAvatar(value, el) {
+            document.querySelectorAll('.avatar-option').forEach(function(o) {
+                o.classList.remove('selected');
+            });
+            el.classList.add('selected');
+            document.getElementById('avatarValue').value = value;
+            document.getElementById('avatarBtn').disabled = false;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+body { font-family: Arial, sans-serif; margin: 20px; }
+.form-container { background-color: #f9f9f9; padding: 20px; border: 1px solid #ddd; border-radius: 4px; max-width: 500px; }
+.form-group { margin-bottom: 20px; }
+label { display: block; font-weight: bold; margin-bottom: 5px; }
+input[type="text"],
+input[type="email"],
+input[type="date"],
+select,
+textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+button { padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
+button:hover { background-color: #45a049; }
+a { color: #0066cc; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Theme toggle */
+.theme-toggle {
+    float: right;
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 16px;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+.theme-toggle:hover { background-color: #f0f0f0; }
+.theme-icon { margin-right: 8px; }
+
+/* Dark theme */
+.dark-theme { background: #1e2a35; color: #e0e6ed; }
+.dark-theme h1 { color: #e0e6ed; }
+.dark-theme .form-container {
+    background-color: #263240;
+    border-color: #3a4a5a;
+}
+.dark-theme label { color: #c8d6e0; }
+.dark-theme input[type="text"],
+.dark-theme input[type="email"],
+.dark-theme input[type="date"],
+.dark-theme select,
+.dark-theme textarea {
+    background-color: #2d3a47;
+    color: #e0e6ed;
+    border-color: #4a5a6a;
+}
+.dark-theme a { color: #4fc3f7; }
+.dark-theme .theme-toggle {
+    background-color: #2d3a47;
+    color: #e0e6ed;
+    border-color: #4a5a6a;
+}
+.dark-theme .theme-toggle:hover { background-color: #3a4a5a; }

@@ -13,11 +13,13 @@ from .views import (
     LogoutView,
     SurveyView,
     SurveyDoneView,
-    SurveySubmitView,
     SurveySavedView,
     DashboardView,
     AssessmentHistoryView,
     AssessmentReviewView,
+    ProfilePhotoView,
+    AnalyticsView,
+    AnalyticsChartView,
 )
 
 urlpatterns = [
@@ -30,7 +32,6 @@ urlpatterns = [
     path("logout/", LogoutView.as_view(), name="logout"),
     path("survey/", SurveyView.as_view(), name="survey"),
     path("survey/done/", SurveyDoneView.as_view(), name="survey_done"),
-    path("survey/submit/", SurveySubmitView.as_view(), name="survey_submit"),
     path("survey/saved/", SurveySavedView.as_view(), name="survey_saved"),
     path("dashboard/", DashboardView.as_view(), name="dashboard"),
     path("assessments/", AssessmentHistoryView.as_view(), name="assessment_history"),
@@ -39,4 +40,7 @@ urlpatterns = [
     path("persons/<int:pk>/", PersonDetailView.as_view(), name="person_detail"),
     path("persons/create/", PersonCreateView.as_view(), name="person_create"),
     path("persons/<int:pk>/update/", PersonUpdateView.as_view(), name="person_update"),
+    path("profile/photo/", ProfilePhotoView.as_view(), name="profile_photo"),
+    path("analytics/", AnalyticsView.as_view(), name="analytics"),
+    path("analytics/<str:chart_type>/", AnalyticsChartView.as_view(), name="analytics_chart"),
 ]

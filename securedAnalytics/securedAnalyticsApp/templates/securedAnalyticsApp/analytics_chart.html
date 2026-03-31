@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ chart_title }} - SECUREDAnalytics</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --sidebar-bg: #1a2634;
+            --sidebar-text: #ffffff;
+            --main-bg: #f5f5f5;
+            --footer-bg: #37474f;
+            --footer-text: #b0bec5;
+            --primary-btn: #26a69a;
+            --link-color: #26a69a;
+        }
+
+        .dark-theme {
+            --main-bg: #1e2a35;
+            --sidebar-bg: #1a2634;
+            --footer-bg: #1a2634;
+            --footer-text: #8899a6;
+        }
+        .dark-theme .theme-toggle { background-color: #2d3a47; color: #e0e6ed; border-color: #4a5a6a; }
+        .dark-theme .theme-toggle:hover { background-color: #3a4a5a; }
+        .dark-theme .page-title { color: #e0e6ed; }
+        .dark-theme .page-subtitle { color: #b0bec5; }
+        .dark-theme .chart-container { background: #263240; border-color: #3a4a5a; }
+        .dark-theme .no-data { color: #b0bec5; }
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            min-height: 100vh;
+            background-color: var(--main-bg);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 220px;
+            background-color: var(--sidebar-bg);
+            color: var(--sidebar-text);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+        }
+        .user-profile { text-align: center; padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .user-avatar { font-size: 12px; color: #b0bec5; margin-bottom: 5px; }
+        .user-avatar a { display: inline-block; text-decoration: none; }
+        .user-avatar img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid #26a69a; }
+        .user-avatar .avatar-placeholder { font-size: 48px; cursor: pointer; }
+        .user-name { font-size: 16px; font-weight: bold; margin-bottom: 5px; }
+        .user-role { font-size: 14px; color: #b0bec5; }
+        .nav-menu { list-style: none; padding: 10px 0; flex-grow: 1; }
+        .nav-item { display: flex; align-items: center; padding: 12px 20px; color: var(--sidebar-text); text-decoration: none; transition: background-color 0.3s; }
+        .nav-item:hover { background-color: rgba(255,255,255,0.1); }
+        .nav-item.active { background-color: rgba(255,255,255,0.15); }
+        .nav-item.disabled { color: #607d8b; pointer-events: none; }
+        .nav-icon { margin-right: 12px; font-size: 18px; }
+
+        /* Main Content */
+        .main-content { flex: 1; margin-left: 220px; display: flex; flex-direction: column; min-height: 100vh; }
+        .header { display: flex; justify-content: flex-end; padding: 10px 20px; background-color: var(--main-bg); }
+        .theme-toggle { display: flex; align-items: center; padding: 8px 16px; background-color: white; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .theme-toggle:hover { background-color: #f0f0f0; }
+        .theme-icon { margin-right: 8px; }
+        .content-area { flex: 1; padding: 40px 20px; }
+        .page-title { font-size: 28px; color: #1a2634; text-align: center; margin-bottom: 8px; }
+        .page-subtitle { font-size: 16px; color: #607d8b; text-align: center; margin-bottom: 30px; }
+
+        .back-link { display: inline-block; margin-bottom: 24px; color: var(--link-color); text-decoration: none; font-size: 15px; }
+        .back-link:hover { text-decoration: underline; }
+        .dark-theme .back-link { color: var(--primary-btn); }
+
+        .chart-container {
+            background: #ffffff;
+            border: 1px solid #dce3ea;
+            border-radius: 10px;
+            padding: 30px;
+            max-width: 900px;
+            margin: 0 auto 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .chart-wrapper { position: relative; width: 100%; max-height: 500px; }
+        .chart-wrapper canvas { max-height: 500px; }
+
+        .no-data {
+            text-align: center;
+            color: #607d8b;
+            font-size: 18px;
+            padding: 60px 20px;
+        }
+
+        .footer { background-color: var(--footer-bg); color: var(--footer-text); text-align: center; padding: 15px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="user-profile">
+            <div class="user-avatar">
+                <a href="{% url 'profile_photo' %}" title="Change profile photo">
+                {% if profile_photo_url %}
+                    <img src="{{ profile_photo_url }}" alt="Profile">
+                {% elif avatar_url %}
+                    <img src="{{ avatar_url }}" alt="Avatar">
+                {% else %}
+                    <span class="avatar-placeholder">👤</span>
+                {% endif %}
+                </a>
+            </div>
+            <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
+            <div class="user-role">{{ user_role }}</div>
+        </div>
+        <nav>
+            <ul class="nav-menu">
+                <li><a href="{% url 'dashboard' %}" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a></li>
+                <li><a href="#" class="nav-item disabled"><span class="nav-icon">☑️</span> Check-ins</a></li>
+                <li><a href="#" class="nav-item disabled"><span class="nav-icon">🎯</span> Goals</a></li>
+                <li><a href="#" class="nav-item disabled"><span class="nav-icon">💬</span> Support</a></li>
+                <li><a href="{% url 'assessment_history' %}" class="nav-item"><span class="nav-icon">📋</span> Assessment</a></li>
+                <li><a href="{% url 'analytics' %}" class="nav-item active"><span class="nav-icon">📈</span> Analytics</a></li>
+                <li><a href="#" class="nav-item disabled"><span class="nav-icon">▶️</span> Onboarding</a></li>
+                <li>
+                    <form method="post" action="{% url 'logout' %}" style="margin: 0;">
+                        {% csrf_token %}
+                        <button type="submit" class="nav-item" style="width: 100%; border: none; background: transparent; text-align: left;">
+                            <span class="nav-icon">🚪</span> Logout
+                        </button>
+                    </form>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="header">
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <span class="theme-icon">🌙</span> Toggle Theme
+            </button>
+        </header>
+
+        <div class="content-area">
+            <a href="{% url 'analytics' %}" class="back-link">← Back to Analytics</a>
+            <h1 class="page-title">{{ chart_title }}</h1>
+            <p class="page-subtitle">Assessment scores from your most recent completed survey.</p>
+
+            {% if has_data %}
+            <div class="chart-container">
+                <div class="chart-wrapper">
+                    <canvas id="mainChart"></canvas>
+                </div>
+            </div>
+
+            {{ chart_data|json_script:"chart-data" }}
+            {{ chart_type|json_script:"chart-type" }}
+
+            <!-- Category breakdown charts for bar/line -->
+            {% if chart_type == "bar" or chart_type == "line" %}
+            <div id="categoryCharts"></div>
+            {% endif %}
+
+            {% else %}
+            <div class="chart-container">
+                <div class="no-data">No completed assessment data available to display.</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <footer class="footer">
+            © SECUREDAnalytics | Powered by LION Institute
+        </footer>
+    </main>
+
+    <script>
+        (function() {
+            if (localStorage.getItem('sa_theme') === 'dark') {
+                document.body.classList.add('dark-theme');
+            }
+        })();
+        function toggleTheme() {
+            document.body.classList.toggle('dark-theme');
+            localStorage.setItem('sa_theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
+        }
+    </script>
+
+    {% if has_data %}
+    <script>
+    (function() {
+        var chartData = JSON.parse(document.getElementById('chart-data').textContent);
+        var chartType = JSON.parse(document.getElementById('chart-type').textContent);
+        var isDark = document.body.classList.contains('dark-theme');
+        var textColor = isDark ? '#e0e6ed' : '#1a2634';
+        var gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+
+        var COLORS = [
+            '#26a69a', '#ef5350', '#42a5f5', '#ffca28', '#ab47bc',
+            '#66bb6a', '#ff7043', '#5c6bc0', '#8d6e63', '#78909c',
+            '#ec407a', '#29b6f6', '#9ccc65', '#ffa726', '#7e57c2'
+        ];
+
+        var ctx = document.getElementById('mainChart').getContext('2d');
+
+        if (chartType === 'pie') {
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        data: chartData.scores,
+                        backgroundColor: COLORS.slice(0, chartData.labels.length),
+                        borderWidth: 2,
+                        borderColor: isDark ? '#263240' : '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: textColor, padding: 16, font: { size: 13 } }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Assessment Score Distribution',
+                            color: textColor,
+                            font: { size: 18 }
+                        }
+                    }
+                }
+            });
+
+        } else if (chartType === 'bar') {
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        label: 'Total Score',
+                        data: chartData.scores,
+                        backgroundColor: COLORS.slice(0, chartData.labels.length),
+                        borderRadius: 6,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: textColor },
+                            grid: { color: gridColor }
+                        },
+                        x: {
+                            ticks: { color: textColor, maxRotation: 45 },
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'Total Scores by Assessment',
+                            color: textColor,
+                            font: { size: 18 }
+                        }
+                    }
+                }
+            });
+
+            // Category breakdown bar charts
+            renderCategoryCharts('bar');
+
+        } else if (chartType === 'line') {
+            // Build category-level datasets across assessments
+            var datasets = [];
+            chartData.category_data.forEach(function(aData, aIdx) {
+                aData.categories.forEach(function(cat, cIdx) {
+                    datasets.push({
+                        label: aData.assessment + ' – ' + cat.title,
+                        data: [cat.score],
+                        borderColor: COLORS[(aIdx * 5 + cIdx) % COLORS.length],
+                        backgroundColor: COLORS[(aIdx * 5 + cIdx) % COLORS.length] + '33',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    });
+                });
+            });
+
+            // Flatten all categories into one line chart
+            var allLabels = [];
+            var allScores = [];
+            chartData.category_data.forEach(function(aData) {
+                aData.categories.forEach(function(cat) {
+                    allLabels.push(cat.title);
+                    allScores.push(cat.score);
+                });
+            });
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: allLabels,
+                    datasets: [{
+                        label: 'Category Scores',
+                        data: allScores,
+                        borderColor: '#26a69a',
+                        backgroundColor: 'rgba(38, 166, 154, 0.15)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 5,
+                        pointBackgroundColor: COLORS.slice(0, allLabels.length),
+                        pointHoverRadius: 8,
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: textColor },
+                            grid: { color: gridColor }
+                        },
+                        x: {
+                            ticks: { color: textColor, maxRotation: 45 },
+                            grid: { color: gridColor }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'Category Scores Across All Assessments',
+                            color: textColor,
+                            font: { size: 18 }
+                        }
+                    }
+                }
+            });
+
+        } else if (chartType === 'funnel') {
+            // Funnel: assessments sorted descending by score, rendered as horizontal bars
+            var sorted = chartData.labels.map(function(label, i) {
+                return { label: label, score: chartData.scores[i] };
+            }).sort(function(a, b) { return b.score - a.score; });
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sorted.map(function(d) { return d.label; }),
+                    datasets: [{
+                        label: 'Score',
+                        data: sorted.map(function(d) { return d.score; }),
+                        backgroundColor: sorted.map(function(_, i) { return COLORS[i % COLORS.length]; }),
+                        borderRadius: 6,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: { color: textColor },
+                            grid: { color: gridColor }
+                        },
+                        y: {
+                            ticks: { color: textColor },
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'Assessment Scores (Highest to Lowest)',
+                            color: textColor,
+                            font: { size: 18 }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderCategoryCharts(type) {
+            var container = document.getElementById('categoryCharts');
+            if (!container) return;
+            chartData.category_data.forEach(function(aData, aIdx) {
+                var wrapper = document.createElement('div');
+                wrapper.className = 'chart-container';
+                wrapper.style.marginTop = '24px';
+                wrapper.innerHTML = '<div class="chart-wrapper"><canvas id="catChart' + aIdx + '"></canvas></div>';
+                container.appendChild(wrapper);
+
+                var catLabels = aData.categories.map(function(c) { return c.title; });
+                var catScores = aData.categories.map(function(c) { return c.score; });
+                var catCtx = document.getElementById('catChart' + aIdx).getContext('2d');
+
+                new Chart(catCtx, {
+                    type: type,
+                    data: {
+                        labels: catLabels,
+                        datasets: [{
+                            label: 'Category Score',
+                            data: catScores,
+                            backgroundColor: COLORS.slice(0, catLabels.length),
+                            borderRadius: type === 'bar' ? 6 : 0,
+                            borderColor: type === 'line' ? COLORS[aIdx % COLORS.length] : undefined,
+                            borderWidth: type === 'line' ? 3 : undefined,
+                            tension: 0.3,
+                            fill: type === 'line'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: type === 'bar' || type === 'line' ? {
+                            y: { beginAtZero: true, ticks: { color: textColor }, grid: { color: gridColor } },
+                            x: { ticks: { color: textColor, maxRotation: 45 }, grid: { display: false } }
+                        } : {},
+                        plugins: {
+                            legend: { display: false },
+                            title: {
+                                display: true,
+                                text: aData.assessment + ' – Category Breakdown',
+                                color: textColor,
+                                font: { size: 16 }
+                            }
+                        }
+                    }
+                });
+            });
+        }
+    })();
+    </script>
+    {% endif %}
+</body>
+</html>

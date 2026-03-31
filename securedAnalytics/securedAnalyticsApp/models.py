@@ -58,6 +58,13 @@ class Person(models.Model):
         ("Officer", "Officer"),
         ("Deputy", "Deputy"),
         ("trooper", "Trooper"),
+        ("Trooper 1", "Trooper 1"),
+        ("Trooper 2", "Trooper 2"),
+        ("Trooper 3", "Trooper 3"),
+        ("Trooper 4", "Trooper 4"),
+        ("Trooper 5", "Trooper 5"),
+        ("Trooper 6", "Trooper 6"),
+        ("Ranger", "Ranger"),
         ("Constable", "Constable"),
         ("Detective", "Detective"),
         ("Investigator", "Investigator"),
@@ -81,12 +88,32 @@ class Person(models.Model):
         ("Superintendent", "Superintendent"),
     ]
 
+    AVATAR_CHOICES = [
+        ("", "— No Avatar —"),
+        ("avatar_badge.svg", "Badge"),
+        ("avatar_shield.svg", "Shield"),
+        ("avatar_star.svg", "Star"),
+        ("avatar_eagle.svg", "Eagle"),
+        ("avatar_helmet.svg", "Helmet"),
+    ]
+
     user = models.OneToOneField(Users, on_delete=models.CASCADE)
     anonymous_id = models.CharField(
         max_length=10,
         unique=True,
         editable=False,
         default=generate_anonymous_id,
+    )
+    profile_photo = models.ImageField(
+        upload_to="profile_photos/",
+        blank=True,
+        default="",
+    )
+    avatar = models.CharField(
+        max_length=50,
+        choices=AVATAR_CHOICES,
+        blank=True,
+        default="",
     )
     phone_number = models.CharField(max_length=20, blank=True)
     address = models.CharField(max_length=255, blank=True)
@@ -376,6 +403,10 @@ class SurveyProgress(models.Model):
     user = models.ForeignKey(
         Users, on_delete=models.CASCADE, related_name="survey_sessions",
     )
+    anonymous_id = models.CharField(
+        max_length=10, blank=True, default="",
+        help_text="Copied from Person.anonymous_id to link user ↔ person ↔ results.",
+    )
     question_pool = models.JSONField()
     responses = models.JSONField(default=dict, blank=True)
     current_page = models.PositiveIntegerField(default=0)
@@ -395,3 +426,56 @@ class SurveyProgress(models.Model):
 
     def __str__(self):
         return f"Survey({self.user.username}, {self.status}, page {self.current_page})"
+
+
+# ---------------------------------------------------------------------------
+# Assessment Result (organized & graded per‑assessment data)
+# ---------------------------------------------------------------------------
+
+class AssessmentResult(models.Model):
+    """Stores organized, gradable results for one assessment within a survey.
+
+    Each record holds every category → question → answer for a single
+    assessment key (e.g. "sle"), structured in ``results_data`` so
+    business logic can iterate and grade.
+    """
+
+    survey_progress = models.ForeignKey(
+        SurveyProgress,
+        on_delete=models.CASCADE,
+        related_name="assessment_results",
+    )
+    anonymous_id = models.CharField(
+        max_length=10, blank=True, default="",
+        help_text="Copied from Person.anonymous_id to link user ↔ person ↔ results.",
+    )
+    assessment_key = models.CharField(max_length=10, db_index=True)
+    assessment_label = models.CharField(max_length=255)
+    results_data = models.JSONField(
+        help_text=(
+            "Nested structure: "
+            '{"categories": [{"numeral": "I", "title": "…", "description": "…", '
+            '"questions": [{"pk": 1, "number": 1, "text": "…", '
+            '"answer": 5, "answer_label": "Highly Agree"}]}]}'
+        ),
+    )
+    score = models.DecimalField(
+        max_digits=6, decimal_places=2, null=True, blank=True,
+        help_text="Overall assessment score (populated by grading logic).",
+    )
+    graded_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Assessment Result"
+        verbose_name_plural = "Assessment Results"
+        ordering = ["assessment_key"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["survey_progress", "assessment_key"],
+                name="unique_result_per_assessment",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.assessment_label} – Survey #{self.survey_progress_id}"

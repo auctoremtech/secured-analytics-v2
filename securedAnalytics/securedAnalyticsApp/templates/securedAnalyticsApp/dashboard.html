@@ -74,6 +74,21 @@
             color: #b0bec5;
             margin-bottom: 5px;
         }
+        .user-avatar a {
+            display: inline-block;
+            text-decoration: none;
+        }
+        .user-avatar img {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #26a69a;
+        }
+        .user-avatar .avatar-placeholder {
+            font-size: 48px;
+            cursor: pointer;
+        }
 
         .user-name {
             font-size: 16px;
@@ -230,7 +245,17 @@
     <!-- Sidebar -->
     <aside class="sidebar">
         <div class="user-profile">
-            <div class="user-avatar">👤</div>
+            <div class="user-avatar">
+                <a href="{% url 'profile_photo' %}" title="Change profile photo">
+                {% if profile_photo_url %}
+                    <img src="{{ profile_photo_url }}" alt="Profile">
+                {% elif avatar_url %}
+                    <img src="{{ avatar_url }}" alt="Avatar">
+                {% else %}
+                    <span class="avatar-placeholder">👤</span>
+                {% endif %}
+                </a>
+            </div>
             <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
             <div class="user-role">{{ user_role }}</div>
         </div>
@@ -241,7 +266,7 @@
                 <li><a href="#" class="nav-item disabled"><span class="nav-icon">🎯</span> Goals</a></li>
                 <li><a href="#" class="nav-item disabled"><span class="nav-icon">💬</span> Support</a></li>
                 <li><a href="{% url 'assessment_history' %}" class="nav-item"><span class="nav-icon">📋</span> Assessment</a></li>
-                <li><a href="#" class="nav-item disabled"><span class="nav-icon">📈</span> Analytics</a></li>
+                <li><a href="{% url 'analytics' %}" class="nav-item"><span class="nav-icon">📈</span> Analytics</a></li>
                 <li><a href="#" class="nav-item disabled"><span class="nav-icon">▶️</span> Onboarding</a></li>
                 <li>
                     <form method="post" action="{% url 'logout' %}" style="margin: 0;">
@@ -297,11 +322,13 @@
                     <div class="card-desc">Review your completed assessment results.</div>
                 </div>
                 </a>
+                <a href="{% url 'analytics' %}" style="text-decoration: none; color: inherit;">
                 <div class="card">
                     <div class="card-icon">📈</div>
                     <div class="card-title">Analytics</div>
                     <div class="card-desc">Explore data-driven insights and reports.</div>
                 </div>
+                </a>
                 <div class="card">
                     <div class="card-icon">▶️</div>
                     <div class="card-title">Onboarding</div>

@@ -184,6 +184,31 @@
             border-color: #4a5a6a;
         }
         .dark-theme .theme-toggle:hover { background-color: #3a4a5a; }
+
+        /* Validation: unanswered highlight */
+        .question-card.unanswered {
+            border: 2px solid #e74c3c;
+            background: #fdf0ef;
+        }
+        .dark-theme .question-card.unanswered {
+            border-color: #e74c3c;
+            background: #3b2020;
+        }
+        .validation-msg {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-bottom: 18px;
+            padding: 10px 16px;
+            background: #fdeaea;
+            border: 1px solid #f5c6cb;
+            border-radius: 6px;
+            display: none;
+        }
+        .dark-theme .validation-msg {
+            background: #3b2020;
+            border-color: #e74c3c;
+            color: #f5a5a5;
+        }
     </style>
 </head>
 <body>
@@ -192,9 +217,11 @@
     </button>
     <div class="container">
         <div class="header-row">
-            <h1>{% if reviewing %}Review Your Answers{% else %}Assessment{% endif %}</h1>
+            <h1>{% if reviewing %}Review Your Answers{% endif %}</h1>
             <span class="page-info">Page {{ page_number }} of {{ total_pages }}</span>
         </div>
+
+        <div class="validation-msg" id="validationMsg" {% if validation_error %}style="display:block"{% endif %}>Please answer all questions before proceeding. Unanswered questions are highlighted below.</div>
 
         {% if reviewing %}
         <div class="review-banner">
@@ -207,7 +234,7 @@
             {% csrf_token %}
 
             {% for item in question_items %}
-            <div class="question-card">
+            <div class="question-card{% if item.resp_key in unanswered_keys %} unanswered{% endif %}">
                 <p class="question-text">
                     <span class="question-number">{{ forloop.counter|add:start_number }}.</span> {{ item.question.text }}
                 </p>
@@ -222,7 +249,7 @@
                     </div>
                     <div class="likert-option">
                         <input type="radio" id="{{ item.resp_key }}_n" name="{{ item.resp_key }}" value="3" {% if item.saved_value == "3" %}checked{% endif %}>
-                        <label for="{{ item.resp_key }}_n">Neutral</label>
+                        <label for="{{ item.resp_key }}_n">Uncommitted</label>
                     </div>
                     <div class="likert-option">
                         <input type="radio" id="{{ item.resp_key }}_d" name="{{ item.resp_key }}" value="2" {% if item.saved_value == "2" %}checked{% endif %}>
@@ -263,28 +290,56 @@
             localStorage.setItem('sa_theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
         }
 
-        // Enable Next/Done only when all questions on the page are answered.
-        // Save & Resume Later is always clickable (uses formnovalidate).
+        // Validate all questions answered before allowing Next/Done.
         (function () {
             var form = document.getElementById("surveyForm");
             var btn = document.getElementById("submitBtn");
-            var totalQuestions = {{ question_items|length }};
+            var msg = document.getElementById("validationMsg");
+            var cards = form.querySelectorAll(".question-card");
 
-            function countAnswered() {
-                var names = {};
-                form.querySelectorAll("input[type=radio]:checked").forEach(function (r) {
-                    names[r.name] = true;
+            function getUnansweredCards() {
+                var unanswered = [];
+                cards.forEach(function (card) {
+                    var radios = card.querySelectorAll("input[type=radio]");
+                    var answered = false;
+                    radios.forEach(function (r) { if (r.checked) answered = true; });
+                    if (!answered) unanswered.push(card);
                 });
-                return Object.keys(names).length;
+                return unanswered;
             }
 
-            function update() {
-                btn.disabled = countAnswered() < totalQuestions;
+            function clearHighlights() {
+                cards.forEach(function (card) { card.classList.remove("unanswered"); });
+                msg.style.display = "none";
             }
 
-            btn.disabled = true;
-            update();   // check on load for pre-filled (resumed) responses
-            form.addEventListener("change", update);
+            function validate() {
+                clearHighlights();
+                var missing = getUnansweredCards();
+                if (missing.length > 0) {
+                    missing.forEach(function (card) { card.classList.add("unanswered"); });
+                    msg.style.display = "block";
+                    missing[0].scrollIntoView({ behavior: "smooth", block: "center" });
+                    return false;
+                }
+                return true;
+            }
+
+            // Intercept form submit: only block Next/Done, allow Save & Previous
+            form.addEventListener("submit", function (e) {
+                var action = e.submitter ? e.submitter.value : "next";
+                if (action === "save" || action === "previous") return;
+                if (!validate()) e.preventDefault();
+            });
+
+            // Clear highlight on a card when its question gets answered
+            form.addEventListener("change", function (e) {
+                if (e.target.type === "radio") {
+                    var card = e.target.closest(".question-card");
+                    if (card) card.classList.remove("unanswered");
+                    if (getUnansweredCards().length === 0) msg.style.display = "none";
+                }
+            });
         })();
     </script>
 </body>

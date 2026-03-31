@@ -1,0 +1,108 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    min-height: 100vh;
+    background: #f5f7fa;
+    color: #243447;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.container {
+    width: 90%;
+    max-width: 760px;
+    background: #ffffff;
+    border: 1px solid #dce3ea;
+    border-radius: 8px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+    padding: 32px;
+}
+
+h1 {
+    margin-top: 0;
+    color: #1a2634;
+    font-size: 30px;
+    text-align: center;
+}
+
+.id-box {
+    margin: 18px 0 24px 0;
+    padding: 14px 16px;
+    border: 1px solid #bfd5e8;
+    background: #edf6fd;
+    border-radius: 6px;
+    font-size: 16px;
+}
+
+.id-value {
+    font-family: "Courier New", monospace;
+    font-weight: bold;
+    color: #0d3a60;
+}
+
+.lorem p {
+    margin: 8px 0;
+    line-height: 1.55;
+    color: #37474f;
+}
+
+.actions {
+    margin-top: 28px;
+    display: flex;
+    justify-content: center;
+}
+
+.btn {
+    border: none;
+    background: #26a69a;
+    color: #ffffff;
+    padding: 12px 36px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.btn:hover {
+    background: #2bbbad;
+}
+
+/* Theme toggle */
+.theme-toggle {
+    position: fixed;
+    top: 12px;
+    right: 16px;
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    z-index: 100;
+}
+.theme-toggle:hover { background-color: #f0f0f0; }
+.theme-icon { margin-right: 8px; }
+
+/* Dark theme */
+.dark-theme { background: #1e2a35; color: #e0e6ed; }
+.dark-theme .container {
+    background: #263240;
+    border-color: #3a4a5a;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+}
+.dark-theme h1 { color: #e0e6ed; }
+.dark-theme .id-box {
+    background: #1e2d3a;
+    border-color: #3a4a5a;
+}
+.dark-theme .id-value { color: #80b0d0; }
+.dark-theme .lorem p { color: #b0bec5; }
+.dark-theme .theme-toggle {
+    background-color: #2d3a47;
+    color: #e0e6ed;
+    border-color: #4a5a6a;
+}
+.dark-theme .theme-toggle:hover { background-color: #3a4a5a; }
