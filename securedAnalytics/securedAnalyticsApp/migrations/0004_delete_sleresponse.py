@@ -7,6 +7,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('securedAnalyticsApp', '0003_remove_supervisorleadershipengagement_person_and_more'),
+        ('assessments', '0002_delete_sleresponseproxy'),
     ]
 
     operations = [
